@@ -1,20 +1,22 @@
 <?php
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Passport\HasApiTokens;
 
-class UserProfileModel extends Model
+class UserProfileModel extends Authenticatable
 {
     //
-
+    use HasApiTokens, Notifiable;
     protected $fillable = [
-        'role_id',//f - roles
+        'role_id', //f - roles
         'first_name',
         'last_name',
         'email',
         'password',
         'mobileNumber',
-        'location_id',// f- locations
+        'location_id', // f- locations
         'payrate',
         'profileImage',
         'created_by',
@@ -23,8 +25,8 @@ class UserProfileModel extends Model
         'updated_on',
         'status',
     ];
-
-    protected $table = 'user_profiles';
+    protected $hidden = ['password', 'remember_token'];
+    protected $table  = 'user_profiles';
 
     public function role()
     {

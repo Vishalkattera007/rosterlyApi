@@ -43,7 +43,7 @@ return [
 
         'api' => [
             'driver'   => 'passport',
-            'provider' => 'users',
+            'provider' => 'UserProfileModel',
         ],
     ],
 
@@ -67,7 +67,7 @@ return [
     'providers'        => [
         'users' => [
             'driver' => 'eloquent',
-            'model'  => env('AUTH_MODEL', App\Models\User::class),
+            'model'  => env('AUTH_MODEL', App\Models\UserProfileModel::class),
         ],
 
         // 'users' => [
