@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\LocationModel;
+use App\Models\UserProfileModel;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -103,4 +104,33 @@ class LocationController extends Controller
             return response()->json(['message' => 'Failed to delete location', 'error' => $e->getMessage()], 500);
         }
     }
+
+    public function getUsersByLocation($location_id)
+{
+    try {
+        $users = UserProfileModel::with('location')
+                    ->where('location_id', $location_id)
+                    ->get();
+
+        if ($users->isEmpty()) {
+            return response()->json([
+                'message' => 'No users found for this location.',
+                'status' => false
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Users found for the given location.',
+            'data' => $users,
+            'status' => true
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Failed to fetch users by location.',
+            'error' => $e->getMessage(),
+            'status' => false
+        ], 500);
+    }
+}
+
 }

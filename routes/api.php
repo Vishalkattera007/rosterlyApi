@@ -37,4 +37,6 @@ Route::prefix('locations')->group(function () {
     Route::get('{id}', [LocationController::class, 'show']);
     Route::put('{id}', [LocationController::class, 'update']);
     Route::delete('{id}', [LocationController::class, 'destroy']);
+ // Fetch users by location ID
+    Route::get('users/{location_id}', [LocationController::class, 'getUsersByLocation']);
 });
