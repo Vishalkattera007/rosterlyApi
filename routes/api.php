@@ -15,3 +15,12 @@ Route::get('/unavailability', [UnavailabilityController::class, 'index'])->name(
 Route::get('/users/role/{id}', [UserProfileController::class, 'show'])->name('users.show');
 
 Route::post('/users', [UserProfileController::class, 'store'])->name('users.store');
+
+
+Route::prefix('locations')->group(function () {
+    Route::get('/', [LocationController::class, 'index']);
+    Route::post('/', [LocationController::class, 'store']);
+    Route::get('{id}', [LocationController::class, 'show']);
+    Route::put('{id}', [LocationController::class, 'update']);
+    Route::delete('{id}', [LocationController::class, 'destroy']);
+});

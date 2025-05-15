@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\LocationModel;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
 
 class LocationController extends Controller
 {
@@ -13,11 +16,12 @@ class LocationController extends Controller
      */
     public function index()
     {
-         $locations = LocationModel::all();
-        return response()->json([
-            'message' => 'locations list',
-            'data' => $locations
-        ]);
+        try {
+            $locations = LocationModel::all();
+            return response()->json($locations);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to fetch locations', 'error' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -25,30 +29,78 @@ class LocationController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        try {
+            $location = LocationModel::create([
+                'location_name' => $request->location_name,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'address' => $request->address,
+                'created_by' => $request->created_by,
+                'status' => $request->status,
+            ]);
+
+            return response()->json(['message' => 'Location created successfully', 'data' => $location], 201);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to create location', 'error' => $e->getMessage()], 500);
+        }
     }
+
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+   public function show($id)
     {
-        //
+        try {
+            $location = LocationModel::findOrFail($id);
+            return response()->json($location);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Location not found'], 404);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to retrieve location', 'error' => $e->getMessage()], 500);
+        }
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        //
+        try {
+            $location = LocationModel::findOrFail($id);
+
+            $location->update([
+                'location_name' => $request->location_name,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'address' => $request->address,
+                'updated_by' => $request->updated_by,
+                'status' => $request->status,
+            ]);
+
+            return response()->json(['message' => 'Location updated successfully', 'data' => $location]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Location not found'], 404);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to update location', 'error' => $e->getMessage()], 500);
+        }
     }
+
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        //
+        try {
+            $location = LocationModel::findOrFail($id);
+            $location->delete();
+
+            return response()->json(['message' => 'Location deleted successfully']);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Location not found'], 404);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to delete location', 'error' => $e->getMessage()], 500);
+        }
     }
 }

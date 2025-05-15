@@ -114,7 +114,29 @@ class UserProfileController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        try {
+            $user = UserProfileModel::findOrFail($id);
+
+            // Only update if keys are present
+            $user->update([
+                'firstName'    => $request->firstName ?? $user->firstName,
+                'lastName'     => $request->lastName ?? $user->lastName,
+                'email'        => $request->email ?? $user->email,
+                'password'     => $request->password ? Hash::make($request->password) : $user->password,
+                'mobileNumber' => $request->phone ?? $user->mobileNumber,
+                'location_id'  => $request->dateOfBirth ?? $user->location_id,
+                'updated_by'   => $request->updated_by ?? $user->updated_by,
+                'updated_at'   => now(),
+                'status'       => $request->status ?? $user->status,
+                'role_id'      => $request->role_id ?? $user->role_id,
+                'payrate'      => $request->payrate ?? $user->payrate,
+                'profileImage' => $request->profileImage ?? $user->profileImage,
+            ]);
+
+            return response()->json(['message' => 'User updated successfully', 'data' => $user], 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to update user', 'error' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -122,6 +144,13 @@ class UserProfileController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        try {
+            $user = UserProfileModel::findOrFail($id);
+            $user->delete();
+
+            return response()->json(['message' => 'User deleted successfully'], 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to delete user', 'error' => $e->getMessage()], 500);
+        }
     }
 }
