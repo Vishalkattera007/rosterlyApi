@@ -105,6 +105,7 @@ class LocationController extends Controller
         }
     }
 
+    // fetch employee based on location id
     public function getUsersByLocation($location_id)
 {
     try {
