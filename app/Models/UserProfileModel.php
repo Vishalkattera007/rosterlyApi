@@ -11,8 +11,8 @@ class UserProfileModel extends Authenticatable
     use HasApiTokens, Notifiable;
     protected $fillable = [
         'role_id', //f - roles
-        'first_name',
-        'last_name',
+        'firstName',
+        'lastName',
         'email',
         'password',
         'mobileNumber',
@@ -20,13 +20,14 @@ class UserProfileModel extends Authenticatable
         'payrate',
         'profileImage',
         'created_by',
-        'created_on',
+        'created_at',
         'updated_by',
-        'updated_on',
+        'updated_at',
         'status',
     ];
-    protected $hidden = ['password', 'remember_token'];
     protected $table  = 'user_profiles';
+    protected $hidden = ['password', 'remember_token'];
+
 
     public function role()
     {
