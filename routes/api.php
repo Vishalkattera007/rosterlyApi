@@ -7,15 +7,29 @@ use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [UserProfileController::class, 'login']);
+
+Route::middleware('apiauth')->group(function () {
+    Route::post('/logout', [UserProfileController::class, 'logout']);
+    Route::prefix('/users')->group(function () {
+    Route::get('/', [UserProfileController::class, 'index']);
+    Route::post('/users', [UserProfileController::class, 'store'])->name('users.store');
+    Route::get('/users/role/{id}', [UserProfileController::class, 'show'])->name('users.show');
+    Route::put('{id}', [UserProfileController::class, 'update']);
+    Route::delete('{id}', [UserProfileController::class, 'destroy']);
+});
+});
+
 Route::get('/roles', [RolesController::class, 'index'])->name('roles.index');
 Route::get('/locations', [LocationController::class, 'index'])->name('locations.index');
-Route::get('/users', [UserProfileController::class, 'index'])->name('users.index');
-Route::get('/unavailability', [UnavailabilityController::class, 'index'])->name('unavail.index');
 
-Route::get('/users/role/{id}', [UserProfileController::class, 'show'])->name('users.show');
 
-Route::post('/users', [UserProfileController::class, 'store'])->name('users.store');
-
+Route::prefix('/unavailability')->group(function () {
+    Route::get('/unavailability', [UnavailabilityController::class, 'index'])->name('unavail.index');
+    Route::post('/', [UnavailabilityController::class, 'store']);
+    Route::get('{id}', [UnavailabilityController::class, 'show']);
+    Route::put('{id}', [UnavailabilityController::class, 'update']);
+    Route::delete('{id}', [UnavailabilityController::class, 'destroy']);
+});
 
 Route::prefix('locations')->group(function () {
     Route::get('/', [LocationController::class, 'index']);
