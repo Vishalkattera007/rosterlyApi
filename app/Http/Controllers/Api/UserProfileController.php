@@ -1,15 +1,30 @@
 <?php
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use App\Models\UserProfileModel;
 use Illuminate\Http\Request;
+use Http\Discovery\Exception;
+use App\Models\UserProfileModel;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
 
 class UserProfileController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    public function login(Request $request)
+    {
+        $user = UserProfileModel::where('email', $request->email)->first();
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+
+        $token = $user->createToken('API Token')->accessToken;
+
+        return response()->json([
+            'token' => $token,
+            'user'  => $user,
+        ]);
+    }
+
     public function index()
     {
         $userProfile = UserProfileModel::all();
@@ -24,7 +39,55 @@ class UserProfileController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        try {
+            // Check if the email already exists
+            $existingUser = UserProfileModel::where('email', $request->email)->first();
+
+            if ($existingUser) {
+                return response()->json([
+                    'message' => "User already exists",
+                    'status' => false
+                ], 409); 
+            }
+
+            if (!$request->has('password') || empty($request->password)) {
+                return response()->json([
+                    'message' => "Password is required",
+                    'status' => false
+                ], 400);
+            }
+
+            // // Create a new admin
+            $userCreate = UserProfileModel::create([
+                'firstName' =>  $request->firstName,
+                'lastName'  =>  $request->lastName,
+                'email'     =>  $request->email,
+                'password' => Hash::make($request->password), 
+                'mobileNumber'     =>  $request->phone,
+                'location_id' => $request->dateOfBirth,
+                'created_by' =>  $request->created_by,
+                'created_at' =>  $request->created_on,
+                'status' =>  $request->status,
+                'role_id' =>  $request->role_id,
+                'payrate' =>  $request->payrate,
+                'profileImage' =>  $request->profileImage,
+                'updated_at' =>  $request->updated_on,
+                'updated_by' =>  $request->updated_by,
+            ]);
+
+            return response()->json([
+                'message' => "User Created Successfully",
+                'data'   => $userCreate,
+                'status' => true
+            ], 201);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => "Something went wrong",
+                'error' => $e->getMessage(),
+                'status' => false
+            ], 500); 
+        }
     }
 
     /**
@@ -41,7 +104,7 @@ class UserProfileController extends Controller
 
         return response()->json([
             'message' => 'User Profiles found',
-            'role'=>$userRole->first()->role->role_name ?? 'unknown role',
+            'role'    => $userRole->first()->role->role_name ?? 'unknown role',
             'data'    => $userRole,
         ]);
     }
