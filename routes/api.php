@@ -13,7 +13,7 @@ Route::middleware('apiauth')->group(function () {
     Route::prefix('/users')->group(function () {
         Route::get('/', [UserProfileController::class, 'index']);
         Route::post('/users', [UserProfileController::class, 'store'])->name('users.store');
-        Route::get('/users/role/{id}', [UserProfileController::class, 'show'])->name('users.show');
+        Route::get('/role/{id}', [UserProfileController::class, 'show'])->name('users.show');
         Route::put('{id}', [UserProfileController::class, 'update']);
         Route::get('/login/{loginId?}', [UserProfileController::class, 'getUsersCreatedBy']);
 
