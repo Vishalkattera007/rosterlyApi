@@ -97,7 +97,6 @@ class UserProfileController extends Controller
                 'profileImage' => $profileImagePath,
                 'created_by'   => $request->created_by,
                 'created_at'   => now(),
-                'status'       => $request->status,
             ]);
 
             // Send password mail if it was generated
