@@ -96,9 +96,7 @@ class UserProfileController extends Controller
                 'payrate'      => $request->payrate,
                 'profileImage' => $profileImagePath,
                 'created_by'   => $request->created_by,
-                'created_at'   => $request->created_on,
-                'updated_at'   => $request->updated_on,
-                'updated_by'   => $request->updated_by,
+                'created_at'   => now(),
                 'status'       => $request->status,
             ]);
 
