@@ -106,12 +106,17 @@ class LocationController extends Controller
     }
 
     // fetch employee based on location id
-    public function getUsersByLocation($location_id)
+public function getUsersByLocation($locationId, Request $request)
 {
     try {
-        $users = UserProfileModel::with('location')
-                    ->where('location_id', $location_id)
-                    ->get();
+        $query = UserProfileModel::with('location')
+                    ->where('location_id', $locationId);
+
+        if ($request->has('created_by') && !empty($request->created_by)) {
+            $query->where('created_by', $request->created_by);
+        }
+
+        $users = $query->get();
 
         if ($users->isEmpty()) {
             return response()->json([
@@ -133,5 +138,30 @@ class LocationController extends Controller
         ], 500);
     }
 }
+
+
+
+public function getRolesByLocationId($locationId, $roleId)
+{
+    try {
+        $users = UserProfileModel::with('location')
+            ->where('location_id', $locationId)
+            ->where('role_id', $roleId)
+            ->get();
+
+        return response()->json([
+            'message' => $users->isEmpty() ? 'No users found.' : 'Users fetched successfully.',
+            'data' => $users,
+            'status' => true
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Error fetching users.',
+            'error' => $e->getMessage(),
+            'status' => false
+        ], 500);
+    }
+}
+
 
 }
