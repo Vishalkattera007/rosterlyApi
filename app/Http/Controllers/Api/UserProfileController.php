@@ -172,6 +172,7 @@ class UserProfileController extends Controller
             'lastName'     => $request->input('lastName', $user->lastName),
             'email'        => $request->input('email', $user->email),
             'password'     => $password,   // hashed or existing password
+            'dob'          => $request->input('dob', $user->dob),
             'mobileNumber' => $request->input('mobileNumber', $user->mobileNumber),
             'location_id'  => $request->input('location_id', $user->location_id),
             'status'       => $request->input('status', $user->status),
