@@ -204,4 +204,9 @@ class UserProfileController extends Controller
             return response()->json(['message' => 'Failed to delete user', 'error' => $e->getMessage()], 500);
         }
     }
+
+    public function changePassword()
+    {
+        
+    }
 }
