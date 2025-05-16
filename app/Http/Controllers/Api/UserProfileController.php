@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+
 
 class UserProfileController extends Controller
 {
@@ -75,6 +77,12 @@ class UserProfileController extends Controller
                 ], 400);
             }
 
+             // Store profile image (if uploaded)
+                $profileImagePath = null;
+                if ($request->hasFile('profileImage')) {
+                    $profileImagePath = $request->file('profileImage')->store('profile_images', 'public');
+                }
+
             // Create user
             $userCreate = UserProfileModel::create([
                 'role_id'      => $request->role_id,
@@ -86,7 +94,7 @@ class UserProfileController extends Controller
                 'mobileNumber' => $request->phone,
                 'location_id'  => $request->location_id,
                 'payrate'      => $request->payrate,
-                'profileImage' => $request->profileImage,
+                'profileImage' => $profileImagePath,
                 'created_by'   => $request->created_by,
                 'created_at'   => $request->created_on,
                 'updated_at'   => $request->updated_on,
@@ -136,32 +144,59 @@ class UserProfileController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
-    {
-        try {
-            $user = UserProfileModel::findOrFail($id);
+   public function update(Request $request, string $id)
+{
+    try {
+        $user = UserProfileModel::findOrFail($id);
 
-            // Only update if keys are present
-            $user->update([
-                'firstName'    => $request->firstName ?? $user->firstName,
-                'lastName'     => $request->lastName ?? $user->lastName,
-                'email'        => $request->email ?? $user->email,
-                'password'     => $request->password ? Hash::make($request->password) : $user->password,
-                'mobileNumber' => $request->phone ?? $user->mobileNumber,
-                'location_id'  => $request->dateOfBirth ?? $user->location_id,
-                'updated_by'   => $request->updated_by ?? $user->updated_by,
-                'updated_at'   => now(),
-                'status'       => $request->status ?? $user->status,
-                'role_id'      => $request->role_id ?? $user->role_id,
-                'payrate'      => $request->payrate ?? $user->payrate,
-                'profileImage' => $request->profileImage ?? $user->profileImage,
-            ]);
-
-            return response()->json(['message' => 'User updated successfully', 'data' => $user], 200);
-        } catch (Exception $e) {
-            return response()->json(['message' => 'Failed to update user', 'error' => $e->getMessage()], 500);
+        // Handle profile image upload
+        if ($request->hasFile('profileImage')) {
+            // Delete old image if exists
+            if ($user->profileImage && Storage::disk('public')->exists($user->profileImage)) {
+                Storage::disk('public')->delete($user->profileImage);
+            }
+            // Store new image
+            $path = $request->file('profileImage')->store('profile_images', 'public');
+        } else {
+            $path = $user->profileImage;
         }
+
+       // Determine password to store (hashed)
+        if ($request->filled('password')) {
+            $password = Hash::make($request->password);
+        } else {
+            $password = $user->password;  // keep existing hashed password
+        }
+
+        
+        // Update all other fields
+        $user->update([
+            'role_id'      => $request->input('role_id', $user->role_id),
+            'firstName'    => $request->input('firstName', $user->firstName),
+            'lastName'     => $request->input('lastName', $user->lastName),
+            'email'        => $request->input('email', $user->email),
+            'password'     => $password,   // hashed or existing password
+            'mobileNumber' => $request->input('mobileNumber', $user->mobileNumber),
+            'location_id'  => $request->input('location_id', $user->location_id),
+            'status'       => $request->input('status', $user->status),
+            'payrate'      => $request->input('payrate', $user->payrate),
+            'profileImage' => $path,
+            'updated_by'   => $request->input('updated_by', $user->updated_by),
+            'updated_at'   => now(),
+        ]);
+
+        return response()->json([
+            'message' => 'User updated successfully',
+            'data'    => $user,
+        ], 200);
+    } catch (Exception $e) {
+        return response()->json([
+            'message' => 'Failed to update user',
+            'error'   => $e->getMessage(),
+        ], 500);
     }
+}
+
 
     public function getUsersCreatedBy($loginId, Request $request)
     {

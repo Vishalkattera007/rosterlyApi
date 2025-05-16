@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Route;
     Route::prefix('/users')->group(function () {
         Route::get('/{id?}', [UserProfileController::class, 'index']);
         Route::post('/', [UserProfileController::class, 'store'])->name('users.store');
-        Route::put('{id}', [UserProfileController::class, 'update']);
+        Route::post('{id}', [UserProfileController::class, 'update']);
         Route::delete('{id}', [UserProfileController::class, 'destroy']);
         Route::get('/role/{id}', [UserProfileController::class, 'show'])->name('users.show');
         Route::get('/login/{loginId?}', [UserProfileController::class, 'getUsersCreatedBy']);
