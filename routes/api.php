@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Route;
     Route::post('/forgotPassword', [ForgotPasswordController::class, 'forgotPassword']);
 
     Route::middleware('apiauth')->group(function () {
-    Route::post('/logout', [UserProfileController::class, 'logout']);
     Route::post('/changePassword', [ChangePasswordController::class, 'changePassword']);
+    Route::post('/logout', [UserProfileController::class, 'logout']);
 
 
     Route::prefix('/users')->group(function () {

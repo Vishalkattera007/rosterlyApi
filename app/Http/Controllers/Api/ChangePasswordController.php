@@ -6,11 +6,15 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\UserProfileModel;
+use Illuminate\Support\Facades\Auth;
+
 
 class ChangePasswordController extends Controller
 {
+  
    public function changePassword(Request $request)
     {
+        // Find user by ID from request (e.g., from localStorage)
         $user = UserProfileModel::where('id', $request->login_id)->first();
 
         if (!$user) {
@@ -20,7 +24,7 @@ class ChangePasswordController extends Controller
             ], 404);
         }
 
-        // Check if current password matches
+        // Check if current password matches the hashed password in DB
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'status' => false,
@@ -28,7 +32,7 @@ class ChangePasswordController extends Controller
             ]);
         }
 
-        // Check if new password and confirm password match
+        // Check if new password matches confirm password
         if ($request->new_password !== $request->confirm_password) {
             return response()->json([
                 'status' => false,
@@ -36,7 +40,7 @@ class ChangePasswordController extends Controller
             ]);
         }
 
-        // Update password
+        // Update password with new hashed password
         $user->password = Hash::make($request->new_password);
         $user->save();
 
@@ -45,4 +49,5 @@ class ChangePasswordController extends Controller
             'message' => 'Password updated successfully.'
         ]);
     }
+
 }
