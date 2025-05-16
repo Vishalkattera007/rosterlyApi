@@ -42,54 +42,12 @@ class UserProfileController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-<<<<<<< HEAD
    public function store(Request $request)
 {
     try {
         // Check if user already exists
         $existingUser = UserProfileModel::where('email', $request->email)->first();
         if ($existingUser) {
-=======
-    public function store(Request $request)
-    {
-        try {
-            // Check if the email already exists
-            $existingUser = UserProfileModel::where('email', $request->email)->first();
-
-            if ($existingUser) {
-                return response()->json([
-                    'message' => "User already exists",
-                    'status' => false
-                ], 409); 
-            }
-
-            if (!$request->has('password') || empty($request->password)) {
-                return response()->json([
-                    'message' => "Password is required",
-                    'status' => false
-                ], 400);
-            }
-
-            // // Create a new admin
-            $userCreate = UserProfileModel::create([
-                'firstName' =>  $request->firstName,
-                'lastName'  =>  $request->lastName,
-                'email'     =>  $request->email,
-                'password' => Hash::make($request->password), 
-                'mobileNumber'     =>  $request->phone,
-                'location_id' => $request->locationId,
-                'dob' => $request->dateOfBirth,
-                'created_by' =>  $request->created_by,
-                'created_at' =>  $request->created_on,
-                'status' =>  $request->status,
-                'role_id' =>  $request->role_id,
-                'payrate' =>  $request->payrate,
-                'profileImage' =>  $request->profileImage,
-                'updated_at' =>  $request->updated_on,
-                'updated_by' =>  $request->updated_by,
-            ]);
-
->>>>>>> 1e1262be69383263b7e098f66ba964353549c6b2
             return response()->json([
                 'message' => "User already exists",
                 'status' => false
