@@ -92,7 +92,6 @@ class UserProfileController extends Controller
                 'password'     => Hash::make($password),
                 'dob'          => $request->dob,
                 'mobileNumber' => $request->phone,
-                'location_id'  => $request->location_id,
                 'payrate'      => $request->payrate,
                 'profileImage' => $profileImagePath,
                 'created_by'   => $request->created_by,
