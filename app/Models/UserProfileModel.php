@@ -15,6 +15,7 @@ class UserProfileModel extends Authenticatable
         'lastName',
         'email',
         'password',
+        'dob',
         'mobileNumber',
         'location_id', // f- locations
         'payrate',
@@ -27,7 +28,6 @@ class UserProfileModel extends Authenticatable
     ];
     protected $table  = 'user_profiles';
     protected $hidden = ['password', 'remember_token'];
-
 
     public function role()
     {
