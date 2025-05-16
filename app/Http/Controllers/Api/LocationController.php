@@ -35,9 +35,9 @@ class LocationController extends Controller
                 'location_name' => $request->location_name,
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
+                'sales' => $request->sales,
                 'address' => $request->address,
                 'created_by' => $request->created_by,
-                'status' => $request->status,
             ]);
 
             return response()->json(['message' => 'Location created successfully', 'data' => $location], 201);

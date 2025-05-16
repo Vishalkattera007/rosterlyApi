@@ -10,6 +10,7 @@ class LocationModel extends Model
         'location_name',
         'latitude',
         'longitude',
+        'sales',
         'address',
         'created_by',
         'updated_by',
