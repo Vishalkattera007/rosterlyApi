@@ -2,28 +2,27 @@
 
 use App\Http\Controllers\Api\ChangePasswordController;
 use App\Http\Controllers\Api\ForgotPasswordController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\RolesController;
 use App\Http\Controllers\Api\LocationController;
-use App\Http\Controllers\Api\UserProfileController;
+use App\Http\Controllers\Api\RolesController;
 use App\Http\Controllers\Api\UnavailabilityController;
+use App\Http\Controllers\Api\UserProfileController;
+use Illuminate\Support\Facades\Route;
 
     Route::post('/login', [UserProfileController::class, 'login']);
-    Route::post('/forgot-password', [ForgotPasswordController::class, 'forgotPassword']);
-    Route::post('/change-password', [ChangePasswordController::class, 'changePassword']);
-
-
+    Route::post('/forgotPassword', [ForgotPasswordController::class, 'forgotPassword']);
 
     Route::middleware('apiauth')->group(function () {
     Route::post('/logout', [UserProfileController::class, 'logout']);
+    Route::post('/changePassword', [ChangePasswordController::class, 'changePassword']);
+
 
     Route::prefix('/users')->group(function () {
-        Route::get('/', [UserProfileController::class, 'index']);
-        Route::post('/users', [UserProfileController::class, 'store'])->name('users.store');
-        Route::get('/role/{id}', [UserProfileController::class, 'show'])->name('users.show');
+        Route::get('/{id?}', [UserProfileController::class, 'index']);
+        Route::post('/', [UserProfileController::class, 'store'])->name('users.store');
         Route::put('{id}', [UserProfileController::class, 'update']);
-        Route::get('/login/{loginId?}', [UserProfileController::class, 'getUsersCreatedBy']);
         Route::delete('{id}', [UserProfileController::class, 'destroy']);
+        Route::get('/role/{id}', [UserProfileController::class, 'show'])->name('users.show');
+        Route::get('/login/{loginId?}', [UserProfileController::class, 'getUsersCreatedBy']);
     });
 
     Route::get('/roles', [RolesController::class, 'index'])->name('roles.index');

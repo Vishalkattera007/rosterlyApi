@@ -1,11 +1,11 @@
 <?php
 namespace App\Http\Controllers\Api;
 
-use App\Mail\SendPasswordMail;
-use Illuminate\Http\Request;
-use Http\Discovery\Exception;
-use App\Models\UserProfileModel;
 use App\Http\Controllers\Controller;
+use App\Mail\SendPasswordMail;
+use App\Models\UserProfileModel;
+use Http\Discovery\Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -28,80 +28,91 @@ class UserProfileController extends Controller
         ]);
     }
 
-    
-
-    public function index()
+    public function index($id = null)
     {
-        $userProfile = UserProfileModel::all();
-        return response()->json([
-            'message' => 'userProfile list',
-            'data'    => $userProfile,
-        ]);
+        if ($id != null) {
+            $userProfile = UserProfileModel::find($id);
+            if (! $userProfile) {
+                return response()->json([
+                    'message' => 'User not found',
+                ], 404);
+            }
+            return response()->json([
+                'message' => 'User Profile found',
+                'data'    => $userProfile,
+            ]);
+        } else {
+            $findAllUsers = UserProfileModel::all();
+            return response()->json([
+                'message' => 'userProfile list',
+                'data'    => $findAllUsers,
+            ]);
+        }
     }
 
     /**
      * Store a newly created resource in storage.
      */
-   public function store(Request $request)
-{
-    try {
-        // Check if user already exists
-        $existingUser = UserProfileModel::where('email', $request->email)->first();
-        if ($existingUser) {
+    public function store(Request $request)
+    {
+        try {
+            // Check if user already exists
+            $existingUser = UserProfileModel::where('email', $request->email)->first();
+            if ($existingUser) {
+                return response()->json([
+                    'message' => "User already exists",
+                    'status'  => false,
+                ], 409);
+            }
+
+            // Generate password if requested
+            $password = $request->generatePassword ? Str::random(8) : $request->password;
+
+            if (! $password) {
+                return response()->json([
+                    'message' => "Password is required",
+                    'status'  => false,
+                ], 400);
+            }
+
+            // Create user
+            $userCreate = UserProfileModel::create([
+                'role_id'      => $request->role_id,
+                'firstName'    => $request->firstName,
+                'lastName'     => $request->lastName,
+                'email'        => $request->email,
+                'password'     => Hash::make($password),
+                'dob'          => $request->dob,
+                'mobileNumber' => $request->phone,
+                'location_id'  => $request->location_id,
+                'payrate'      => $request->payrate,
+                'profileImage' => $request->profileImage,
+                'created_by'   => $request->created_by,
+                'created_at'   => $request->created_on,
+                'updated_at'   => $request->updated_on,
+                'updated_by'   => $request->updated_by,
+                'status'       => $request->status,
+            ]);
+
+            // Send password mail if it was generated
+            if ($request->generatePassword) {
+                Mail::to($request->email)->send(new SendPasswordMail($password));
+            }
+
             return response()->json([
-                'message' => "User already exists",
-                'status' => false
-            ], 409);
-        }
+                'message' => "User Created Successfully",
+                'data'    => $userCreate,
+                'status'  => true,
+            ], 201);
 
-        // Generate password if requested
-        $password = $request->generatePassword ? Str::random(8) : $request->password;
-
-        if (!$password) {
+        } catch (\Exception $e) {
             return response()->json([
-                'message' => "Password is required",
-                'status' => false
-            ], 400);
+                'message' => "Something went wrong",
+                'error'   => $e->getMessage(),
+                'status'  => false,
+            ], 500);
         }
-
-        // Create user
-        $userCreate = UserProfileModel::create([
-            'role_id' => $request->role_id,
-            'firstName' => $request->firstName,
-            'lastName' => $request->lastName,
-            'email' => $request->email,
-            'password' => Hash::make($password),
-            'dob' => $request->dob,
-            'mobileNumber' => $request->phone,
-            'location_id' => $request->location_id,
-            'payrate' => $request->payrate,
-            'profileImage' => $request->profileImage,
-            'created_by' => $request->created_by,
-            'created_at' => $request->created_on,
-            'updated_at' => $request->updated_on,
-            'updated_by' => $request->updated_by,
-            'status' => $request->status,
-        ]);
-
-        // Send password mail if it was generated
-        if ($request->generatePassword) {
-            Mail::to($request->email)->send(new SendPasswordMail($password));
-        }
-
-        return response()->json([
-            'message' => "User Created Successfully",
-            'data' => $userCreate,
-            'status' => true
-        ], 201);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => "Something went wrong",
-            'error' => $e->getMessage(),
-            'status' => false
-        ], 500);
     }
-}
 
     /**
      * Display the specified resource.
@@ -152,43 +163,41 @@ class UserProfileController extends Controller
         }
     }
 
-
     public function getUsersCreatedBy($loginId, Request $request)
     {
         try {
             // Build query: fetch users where created_by = given login ID
             $query = UserProfileModel::with('location')
-                        ->where('created_by', $loginId);
+                ->where('created_by', $loginId);
 
             // Optional: if you want to filter by location_id as well
-            if ($request->has('location_id') && !empty($request->location_id)) {
+            if ($request->has('location_id') && ! empty($request->location_id)) {
                 $query->where('location_id', $request->location_id);
             }
 
             $users = $query->get();
 
-            if ($users->isEmpty()) {        
+            if ($users->isEmpty()) {
                 return response()->json([
                     'message' => 'No users found for the given creator.',
-                    'status' => false
+                    'status'  => false,
                 ], 404);
             }
 
             return response()->json([
                 'message' => 'Users fetched successfully.',
-                'data' => $users,
-                'status' => true
+                'data'    => $users,
+                'status'  => true,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Something went wrong.',
-                'error' => $e->getMessage(),
-                'status' => false
+                'error'   => $e->getMessage(),
+                'status'  => false,
             ], 500);
         }
     }
-
 
     /**
      * Remove the specified resource from storage.
