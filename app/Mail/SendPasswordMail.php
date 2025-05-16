@@ -28,7 +28,7 @@ class SendPasswordMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your Account Password',
+            subject: 'Your Rosterly Account Password',
         );
     }
 
