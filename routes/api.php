@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', [UserProfileController::class, 'login']);
 Route::post('/forgotPassword', [ForgotPasswordController::class, 'forgotPassword']);
 Route::get('/locationSales/location/{id?}', [LocationSalesController::class, 'index']);
+Route::put('/locationSales/{id}', [LocationSalesController::class, 'update']);
 
 Route::middleware('apiauth')->group(function () {
     Route::post('/logout', [UserProfileController::class, 'logout']);

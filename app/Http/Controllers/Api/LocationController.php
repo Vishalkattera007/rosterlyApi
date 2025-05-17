@@ -1,14 +1,13 @@
 <?php
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\LocationModel;
+use App\Models\LocationSales;
 use App\Models\UserProfileModel;
 use Exception;
-use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-
+use Illuminate\Http\Request;
 
 class LocationController extends Controller
 {
@@ -30,15 +29,38 @@ class LocationController extends Controller
      */
     public function store(Request $request)
     {
+        $locationSales = $request->sales;
+        $totalLocationSales = $locationSales*7;
+        $createdBy     = $request->created_by;
         try {
             $location = LocationModel::create([
                 'location_name' => $request->location_name,
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'sales' => $request->sales,
-                'address' => $request->address,
-                'created_by' => $request->created_by,
+                'latitude'      => $request->latitude,
+                'longitude'     => $request->longitude,
+                'address'       => $request->address,
+                'sales'         => $locationSales,
+                'created_by'    => $createdBy,
             ]);
+
+            $locationId = $location->id;
+
+            if ($locationSales != 0) {
+                $insertLocationSales = LocationSales::create([
+                    'location_id' => $locationId,
+                    'monday'      => $locationSales,
+                    'tuesday'     => $locationSales,
+                    'wednesday'   => $locationSales,
+                    'thursday'    => $locationSales,
+                    'friday'      => $locationSales,
+                    'saturday'    => $locationSales,
+                    'sunday'      => $locationSales,
+                    'total'       => $totalLocationSales,
+                    'created_by'  => $createdBy,
+                ]);
+                if (! $insertLocationSales) {
+                    return response()->json(['message' => 'Failed to create location sales'], 500);
+                }
+            }
 
             return response()->json(['message' => 'Location created successfully', 'data' => $location], 201);
         } catch (Exception $e) {
@@ -46,11 +68,10 @@ class LocationController extends Controller
         }
     }
 
-
     /**
      * Display the specified resource.
      */
-   public function show($id)
+    public function show($id)
     {
         try {
             $location = LocationModel::findOrFail($id);
@@ -72,11 +93,11 @@ class LocationController extends Controller
 
             $location->update([
                 'location_name' => $request->location_name,
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'address' => $request->address,
-                'updated_by' => $request->updated_by,
-                'status' => $request->status,
+                'latitude'      => $request->latitude,
+                'longitude'     => $request->longitude,
+                'address'       => $request->address,
+                'updated_by'    => $request->updated_by,
+                'status'        => $request->status,
             ]);
 
             return response()->json(['message' => 'Location updated successfully', 'data' => $location]);
@@ -86,7 +107,6 @@ class LocationController extends Controller
             return response()->json(['message' => 'Failed to update location', 'error' => $e->getMessage()], 500);
         }
     }
-
 
     /**
      * Remove the specified resource from storage.
@@ -106,62 +126,59 @@ class LocationController extends Controller
     }
 
     // fetch employee based on location id
-public function getUsersByLocation($locationId, Request $request)
-{
-    try {
-        $query = UserProfileModel::with('location')
-                    ->where('location_id', $locationId);
+    public function getUsersByLocation($locationId, Request $request)
+    {
+        try {
+            $query = UserProfileModel::with('location')
+                ->where('location_id', $locationId);
 
-        if ($request->has('created_by') && !empty($request->created_by)) {
-            $query->where('created_by', $request->created_by);
-        }
+            if ($request->has('created_by') && ! empty($request->created_by)) {
+                $query->where('created_by', $request->created_by);
+            }
 
-        $users = $query->get();
+            $users = $query->get();
 
-        if ($users->isEmpty()) {
+            if ($users->isEmpty()) {
+                return response()->json([
+                    'message' => 'No users found for this location.',
+                    'status'  => false,
+                ], 404);
+            }
+
             return response()->json([
-                'message' => 'No users found for this location.',
-                'status' => false
-            ], 404);
+                'message' => 'Users found for the given location.',
+                'data'    => $users,
+                'status'  => true,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to fetch users by location.',
+                'error'   => $e->getMessage(),
+                'status'  => false,
+            ], 500);
         }
-
-        return response()->json([
-            'message' => 'Users found for the given location.',
-            'data' => $users,
-            'status' => true
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Failed to fetch users by location.',
-            'error' => $e->getMessage(),
-            'status' => false
-        ], 500);
     }
-}
 
+    public function getRolesByLocationId($locationId, $roleId)
+    {
+        try {
+            $users = UserProfileModel::with('location')
+                ->where('location_id', $locationId)
+                ->where('role_id', $roleId)
+                ->get();
 
-
-public function getRolesByLocationId($locationId, $roleId)
-{
-    try {
-        $users = UserProfileModel::with('location')
-            ->where('location_id', $locationId)
-            ->where('role_id', $roleId)
-            ->get();
-
-        return response()->json([
-            'message' => $users->isEmpty() ? 'No users found.' : 'Users fetched successfully.',
-            'data' => $users,
-            'status' => true
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Error fetching users.',
-            'error' => $e->getMessage(),
-            'status' => false
-        ], 500);
+            return response()->json([
+                'message' => $users->isEmpty() ? 'No users found.' : 'Users fetched successfully.',
+                'data'    => $users,
+                'status'  => true,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error fetching users.',
+                'error'   => $e->getMessage(),
+                'status'  => false,
+            ], 500);
+        }
     }
-}
-
 
 }
