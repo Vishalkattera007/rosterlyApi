@@ -1,11 +1,10 @@
 <?php
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\UnavailabilityModel;
-use Illuminate\Http\Request;
 use Exception;
+use Illuminate\Http\Request;
 
 class UnavailabilityController extends Controller
 {
@@ -34,17 +33,31 @@ class UnavailabilityController extends Controller
     public function store(Request $request)
     {
         try {
-            $unavail = new UnavailabilityModel();
-            $unavail->userId = $request->userId;
-            $unavail->unavailType = $request->unavailType; // one-time or recurring
-            $unavail->day = $request->day;
-            $unavail->fromDate = $request->fromDate;
-            $unavail->toDate = $request->toDate;
-            $unavail->startTime = $request->startTime;
-            $unavail->endTime = $request->endTime;
-            $unavail->notifyTo = $request->notifyTo;
+            $unavail        = new UnavailabilityModel();
+            $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
+                ->get(['fromDate', 'toDate']);
+
+            if ($unavailDetails->isNotEmpty()) {
+                foreach ($unavailDetails as $unavailDetail) {
+                    if (
+                        ($request->fromDate >= $unavailDetail->fromDate && $request->fromDate <= $unavailDetail->toDate) ||
+                        ($request->toDate >= $unavailDetail->fromDate && $request->toDate <= $unavailDetail->toDate) ||
+                        ($request->fromDate <= $unavailDetail->fromDate && $request->toDate >= $unavailDetail->toDate) // handle full overlap
+                    ) {
+                        return response()->json(['message' => 'Unavailability already exists for the selected date range'], 400);
+                    }
+                }
+            }
+            $unavail->userId        = $request->userId;
+            $unavail->unavailType   = $request->unavailType; // one-time or recurring
+            $unavail->day           = $request->day;
+            $unavail->fromDate      = $request->fromDate;
+            $unavail->toDate        = $request->toDate;
+            $unavail->startTime     = $request->startTime;
+            $unavail->endTime       = $request->endTime;
+            $unavail->notifyTo      = $request->notifyTo;
             $unavail->unavailStatus = $request->unavailStatus ?? 'pending';
-            $unavail->created_on = now();
+            $unavail->created_on    = now();
             $unavail->save();
 
             return response()->json(['message' => 'Unavailability saved successfully', 'data' => $unavail]);
@@ -61,7 +74,7 @@ class UnavailabilityController extends Controller
         try {
             $data = UnavailabilityModel::with(['userProfile', 'notifyToUserProfile'])->find($id);
 
-            if (!$data) {
+            if (! $data) {
                 return response()->json(['message' => 'Not found'], 404);
             }
 
@@ -79,20 +92,20 @@ class UnavailabilityController extends Controller
         try {
             $unavail = UnavailabilityModel::find($id);
 
-            if (!$unavail) {
+            if (! $unavail) {
                 return response()->json(['message' => 'Not found'], 404);
             }
 
-            $unavail->unavailType = $request->unavailType;
-            $unavail->day = $request->day;
-            $unavail->fromDate = $request->fromDate;
-            $unavail->toDate = $request->toDate;
-            $unavail->startTime = $request->startTime;
-            $unavail->endTime = $request->endTime;
-            $unavail->notifyTo = $request->notifyTo;
+            $unavail->unavailType   = $request->unavailType;
+            $unavail->day           = $request->day;
+            $unavail->fromDate      = $request->fromDate;
+            $unavail->toDate        = $request->toDate;
+            $unavail->startTime     = $request->startTime;
+            $unavail->endTime       = $request->endTime;
+            $unavail->notifyTo      = $request->notifyTo;
             $unavail->unavailStatus = $request->unavailStatus ?? $unavail->unavailStatus;
-            $unavail->updated_on = now();
-            $unavail->updated_by = $request->updated_by;
+            $unavail->updated_on    = now();
+            $unavail->updated_by    = $request->updated_by;
             $unavail->save();
 
             return response()->json(['message' => 'Unavailability updated successfully', 'data' => $unavail]);
@@ -109,7 +122,7 @@ class UnavailabilityController extends Controller
         try {
             $unavail = UnavailabilityModel::find($id);
 
-            if (!$unavail) {
+            if (! $unavail) {
                 return response()->json(['message' => 'Not found'], 404);
             }
 

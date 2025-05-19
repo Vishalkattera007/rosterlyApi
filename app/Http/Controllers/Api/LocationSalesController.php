@@ -42,7 +42,7 @@ class LocationSalesController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $locationSales = LocationSales::where('location_id',$id)->first();
+        $locationSales = LocationSales::where('location_id', $id)->first();
 
         if (! $locationSales) {
             return response()->json(['message' => 'Location sales not found'], 404);

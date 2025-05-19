@@ -109,69 +109,6 @@ class UserProfileController extends Controller
     }
 }
 
-    // public function store(Request $request)
-    // {
-    //     try {
-    //         // Check if user already exists
-    //         $existingUser = UserProfileModel::where('email', $request->email)->first();
-    //         if ($existingUser) {
-    //             return response()->json([
-    //                 'message' => "User already exists",
-    //                 'status'  => false,
-    //             ], 409);
-    //         }
-
-    //         // Generate password if requested
-    //         $password = $request->generatePassword ? Str::random(8) : $request->password;
-
-    //         if (! $password) {
-    //             return response()->json([
-    //                 'message' => "Password is required",
-    //                 'status'  => false,
-    //             ], 400);
-    //         }
-
-    //          // Store profile image (if uploaded)
-    //             $profileImagePath = null;
-    //             if ($request->hasFile('profileImage')) {
-    //                 $profileImagePath = $request->file('profileImage')->store('profile_images', 'public');
-    //             }
-
-    //         // Create user
-    //         $userCreate = UserProfileModel::create([
-    //             'role_id'      => $request->role_id,
-    //             'firstName'    => $request->firstName,
-    //             'lastName'     => $request->lastName,
-    //             'email'        => $request->email,
-    //             'password'     => Hash::make($password),
-    //             'dob'          => $request->dob,
-    //             'mobileNumber' => $request->mobileNumber,
-    //             'payrate'      => $request->payrate,
-    //             'profileImage' => $profileImagePath,
-    //             'created_by'   => $request->created_by,
-    //             'created_at'   => now(),
-    //         ]);
-
-    //         // Send password mail if it was generated
-    //         if ($request->generatePassword) {
-    //             Mail::to($request->email)->send(new SendPasswordMail($password));
-    //         }
-
-    //         return response()->json([
-    //             'message' => "User Created Successfully",
-    //             'data'    => $userCreate,
-    //             'status'  => true,
-    //         ], 201);
-
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'message' => "Something went wrong",
-    //             'error'   => $e->getMessage(),
-    //             'status'  => false,
-    //         ], 500);
-    //     }
-    // }
-
     /**
      * Display the specified resource.
      */
