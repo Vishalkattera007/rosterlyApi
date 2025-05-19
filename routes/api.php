@@ -9,7 +9,7 @@ use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
     Route::post('/login', [UserProfileController::class, 'login']);
-    Route::post('/forgotPassword', [ForgotPasswordController::class, 'forgotPassword']);
+    Route::post('/  ', [ForgotPasswordController::class, 'forgotPassword']);
 
     Route::middleware('apiauth')->group(function () {
     Route::post('/changePassword', [ChangePasswordController::class, 'changePassword']);
