@@ -109,6 +109,7 @@ class UserProfileController extends Controller
     }
 }
 
+  
     /**
      * Display the specified resource.
      */
@@ -225,16 +226,19 @@ class UserProfileController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
-    {
-        try {
-            $user = UserProfileModel::findOrFail($id);
-            $user->delete();
+   public function destroy(string $id)
+{
+    try {
+        $user = UserProfileModel::findOrFail($id);
+        
+        // Update status from 1 to 0 instead of deleting
+        $user->status = 0;
+        $user->save();
 
-            return response()->json(['message' => 'User deleted successfully'], 200);
-        } catch (Exception $e) {
-            return response()->json(['message' => 'Failed to delete user', 'error' => $e->getMessage()], 500);
-        }
+        return response()->json(['message' => 'User deactivated successfully'], 200);
+    } catch (Exception $e) {
+        return response()->json(['message' => 'Failed to deactivate user', 'error' => $e->getMessage()], 500);
     }
+}
 
 }
