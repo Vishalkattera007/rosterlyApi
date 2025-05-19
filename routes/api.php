@@ -9,10 +9,12 @@ use App\Http\Controllers\Api\UnavailabilityController;
 use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/login', [UserProfileController::class, 'login']);
-Route::post('/forgotPassword', [ForgotPasswordController::class, 'forgotPassword']);
-Route::get('/locationSales/location/{id?}', [LocationSalesController::class, 'index']);
-Route::put('/locationSales/{id}', [LocationSalesController::class, 'update']);
+    Route::post('/login', [UserProfileController::class, 'login']);
+    Route::post('/  ', [ForgotPasswordController::class, 'forgotPassword']);
+    Route::post('/login', [UserProfileController::class, 'login']);
+    Route::post('/forgotPassword', [ForgotPasswordController::class, 'forgotPassword']);
+    Route::get('/locationSales/location/{id?}', [LocationSalesController::class, 'index']);
+    Route::put('/locationSales/{id}', [LocationSalesController::class, 'update']);
 
 Route::middleware('apiauth')->group(function () {
     Route::post('/logout', [UserProfileController::class, 'logout']);
@@ -25,6 +27,8 @@ Route::middleware('apiauth')->group(function () {
         Route::delete('{id}', [UserProfileController::class, 'destroy']);
         Route::get('/role/{id}', [UserProfileController::class, 'show'])->name('users.show');
         Route::get('/login/{loginId?}', [UserProfileController::class, 'getUsersCreatedBy']);
+        Route::post('/filter', [UserProfileController::class, 'filterEmployees'])->name('users.filter');
+
     });
 
     Route::get('/roles', [RolesController::class, 'index'])->name('roles.index');

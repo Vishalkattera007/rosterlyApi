@@ -111,19 +111,20 @@ class LocationController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id)
-    {
-        try {
-            $location = LocationModel::findOrFail($id);
-            $location->delete();
+   public function destroy(string $id)
+{
+    try {
+        $location = LocationModel::findOrFail($id);
+        
+        // Update status from 1 to 0 instead of deleting
+        $location->status = 0;
+        $location->save();
 
-            return response()->json(['message' => 'Location deleted successfully']);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['message' => 'Location not found'], 404);
-        } catch (Exception $e) {
-            return response()->json(['message' => 'Failed to delete location', 'error' => $e->getMessage()], 500);
-        }
+        return response()->json(['message' => 'Location Inactive successfully'], 200);
+    } catch (Exception $e) {
+        return response()->json(['message' => 'Failed to Inactive Location', 'error' => $e->getMessage()], 500);
     }
+}
 
     // fetch employee based on location id
     public function getUsersByLocation($locationId, Request $request)
@@ -180,5 +181,6 @@ class LocationController extends Controller
             ], 500);
         }
     }
+
 
 }

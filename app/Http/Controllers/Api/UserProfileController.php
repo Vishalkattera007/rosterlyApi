@@ -95,7 +95,7 @@ class UserProfileController extends Controller
         Mail::to($request->email)->send(new SendPasswordMail($generatedPassword));
 
         return response()->json([
-            'message' => "User Created Successfully",
+            'message' => "User created and a confirmation email has been sent to the user's email address.",
             'data'    => $userCreate,
             'status'  => true,
         ], 201);
@@ -225,20 +225,19 @@ class UserProfileController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
-    {
-        try {
-            $user = UserProfileModel::findOrFail($id);
-            $user->delete();
-
-            return response()->json(['message' => 'User deleted successfully'], 200);
-        } catch (Exception $e) {
-            return response()->json(['message' => 'Failed to delete user', 'error' => $e->getMessage()], 500);
-        }
-    }
-
-    public function changePassword()
-    {
+   public function destroy(string $id)
+{
+    try {
+        $user = UserProfileModel::findOrFail($id);
         
+        // Update status from 1 to 0 instead of deleting
+        $user->status = 0;
+        $user->save();
+
+        return response()->json(['message' => 'User deactivated successfully'], 200);
+    } catch (Exception $e) {
+        return response()->json(['message' => 'Failed to deactivate user', 'error' => $e->getMessage()], 500);
     }
+}
+
 }
