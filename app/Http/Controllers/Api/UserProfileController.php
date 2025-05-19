@@ -95,7 +95,7 @@ class UserProfileController extends Controller
         Mail::to($request->email)->send(new SendPasswordMail($generatedPassword));
 
         return response()->json([
-            'message' => "User Created Successfully",
+            'message' => "User created and a confirmation email has been sent to the user's email address.",
             'data'    => $userCreate,
             'status'  => true,
         ], 201);
