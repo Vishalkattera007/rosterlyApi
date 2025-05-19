@@ -3,18 +3,25 @@
 use App\Http\Controllers\Api\ChangePasswordController;
 use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\LocationSalesController;
 use App\Http\Controllers\Api\RolesController;
 use App\Http\Controllers\Api\UnavailabilityController;
 use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
+<<<<<<< HEAD
     Route::post('/login', [UserProfileController::class, 'login']);
     Route::post('/  ', [ForgotPasswordController::class, 'forgotPassword']);
+=======
+Route::post('/login', [UserProfileController::class, 'login']);
+Route::post('/forgotPassword', [ForgotPasswordController::class, 'forgotPassword']);
+Route::get('/locationSales/location/{id?}', [LocationSalesController::class, 'index']);
+Route::put('/locationSales/{id}', [LocationSalesController::class, 'update']);
+>>>>>>> 46ca5dde8548cc0acfc7980958ef021ecf4d7ac9
 
-    Route::middleware('apiauth')->group(function () {
-    Route::post('/changePassword', [ChangePasswordController::class, 'changePassword']);
+Route::middleware('apiauth')->group(function () {
     Route::post('/logout', [UserProfileController::class, 'logout']);
-
+    Route::post('/changePassword', [ChangePasswordController::class, 'changePassword']);
 
     Route::prefix('/users')->group(function () {
         Route::get('/{id?}', [UserProfileController::class, 'index']);
