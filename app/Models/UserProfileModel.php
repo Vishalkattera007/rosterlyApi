@@ -8,6 +8,7 @@ use Laravel\Passport\HasApiTokens;
 class UserProfileModel extends Authenticatable
 {
     //
+    
     use HasApiTokens, Notifiable;
     protected $fillable = [
         'role_id', //f - roles

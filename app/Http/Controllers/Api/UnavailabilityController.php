@@ -3,9 +3,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\UnavailabilityModel;
+use App\Models\UserProfileModel;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class UnavailabilityController extends Controller
@@ -94,12 +96,36 @@ class UnavailabilityController extends Controller
                 $unavail->notifyTo      = $request->notifyTo;
                 $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
 
-                $unavail->save();
+                if ($unavail->save()) {
+                    Log::info('Unavailability record saved successfully. ID: ' . $unavail->id);
 
-                return response()->json([
-                    'message' => 'Unavailability saved successfully',
-                    'data'    => $unavail,
-                ]);
+                    $notifyToUser = UserProfileModel::find($request->notifyTo);
+
+                    if ($notifyToUser) {
+                        Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
+
+                        $notification = new \App\Notifications\UnavailabilityNotification([
+                            'userId' => $request->userId, // correct: user making the request
+                            'fromDT' => $request->fromDT,
+                            'toDT'   => $request->toDT,
+                        ]);
+
+                        $notifyToUser->notify($notification);
+                        Log::info("Notification sent to user ID: " . $notifyToUser->id);
+                    } else {
+                        Log::warning('notifyTo user not found. ID: ' . $request->notifyTo);
+                    }
+
+                    return response()->json([
+                        'message' => 'Unavailability saved successfully',
+                        'data'    => $unavail,
+                    ]);
+                } else {
+                    Log::error('Failed to save unavailability record.');
+                    return response()->json([
+                        'message' => 'Failed to save unavailability',
+                    ], 500);
+                }
 
             } else {
                 // Reccuring Days Off
@@ -107,11 +133,11 @@ class UnavailabilityController extends Controller
                     ->get(['fromDT', 'toDT']);
 
                 foreach ($unavailDetails as $unavailDetail) {
-                    $requestFromTime = Carbon::parse($request->fromDT)->format('H:i:s');
-                    $requestToTime   = Carbon::parse($request->toDT)->format('H:i:s');
+                    $requestFromTime = Carbon::parse($request->fromDT)->format('H:i');
+                    $requestToTime   = Carbon::parse($request->toDT)->format('H:i');
 
-                    $existingFromTime = Carbon::parse($unavailDetail->fromDT)->format('H:i:s');
-                    $existingToTime   = Carbon::parse($unavailDetail->toDT)->format('H:i:s');
+                    $existingFromTime = Carbon::parse($unavailDetail->fromDT)->format('H:i');
+                    $existingToTime   = Carbon::parse($unavailDetail->toDT)->format('H:i');
 
                     if ($requestFromTime == $existingFromTime && $requestToTime == $existingToTime) {
                         return response()->json([
@@ -130,8 +156,8 @@ class UnavailabilityController extends Controller
                 $unavail->userId        = $request->userId;
                 $unavail->unavailType   = $id;
                 $unavail->day           = $request->day;
-                $unavail->fromDT        = Carbon::parse($request->fromDT)->format('H:i:s');
-                $unavail->toDT          = Carbon::parse($request->toDT)->format('H:i:s');
+                $unavail->fromDT        = Carbon::parse($request->fromDT)->format('H:i');
+                $unavail->toDT          = Carbon::parse($request->toDT)->format('H:i');
                 $unavail->reason        = $request->reason;
                 $unavail->notifyTo      = $request->notifyTo;
                 $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
