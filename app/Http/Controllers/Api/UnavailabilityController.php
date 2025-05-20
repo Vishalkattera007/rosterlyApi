@@ -112,36 +112,35 @@ class UnavailabilityController extends Controller
                     ->get(['fromDT', 'toDT']);
 
                 foreach ($unavailDetails as $unavailDetail) {
-                    $requestFromTime = Carbon::createFromFormat('h:i A', $request->fromDT)->format('H:i A');
-                    $requestToTime   = Carbon::createFromFormat('h:i A', $request->toDT)->format('H:i A');
+                    // Parse request times (e.g., "4:15 PM")
+                    $requestFromTime = Carbon::createFromFormat('h:i A', trim($request->fromDT));
+                    $requestToTime   = Carbon::createFromFormat('h:i A', trim($request->toDT));
 
+                    // Parse existing DB times (already stored in "h:i A" format)
                     $existingFromTime = Carbon::createFromFormat('h:i A', $unavailDetail->fromDT);
-                    $existingToTime   = Carbon::createFromFormat('h:i A', $unavailDetail->toDT)->format('H:i A');
+                    $existingToTime   = Carbon::createFromFormat('h:i A', $unavailDetail->toDT);
 
+                    // Overlap check
                     if (
-                        ($requestFromTime < $existingToTime) &&
-                        ($requestToTime > $existingFromTime)
+                        $requestFromTime->lt($existingToTime) &&
+                        $requestToTime->gt($existingFromTime)
                     ) {
                         return response()->json([
                             'message' => 'Recurring unavailability already exists for the selected time range.',
                         ], 400);
                     }
                 }
-
                 $statusMap = [
                     'pending'  => 0,
                     'approved' => 1,
                     'rejected' => 2,
                 ];
-                $fromTime = trim($request->fromDT);
-                $toTime   = trim($request->toDT);
-
                 $unavail                = new UnavailabilityModel();
                 $unavail->userId        = $request->userId;
                 $unavail->unavailType   = $id;
                 $unavail->day           = $request->day;
-                $unavail->fromDT        = Carbon::parse($fromTime)->format('h:i A');
-                $unavail->toDT          = Carbon::parse($toTime)->format('h:i A');
+                $unavail->fromDT        = Carbon::createFromFormat('h:i A', trim($request->fromDT))->format('h:i A');
+                $unavail->toDT          = Carbon::createFromFormat('h:i A', trim($request->toDT))->format('h:i A');
                 $unavail->reason        = $request->reason;
                 $unavail->notifyTo      = $request->notifyTo;
                 $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
@@ -149,14 +148,15 @@ class UnavailabilityController extends Controller
                 $unavail->save();
 
                 Log::info('Unavailability record saved successfully. ID: ' . $unavail->id);
-                // Send notification to the user
+
+// Send notification
                 $notifyToUser = UserProfileModel::find($request->notifyTo);
 
                 if ($notifyToUser) {
                     Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
 
                     $notification = new UnavailabilityNotification([
-                        'userId' => $request->userId, // correct: user making the request
+                        'userId' => $request->userId,
                         'fromDT' => $request->fromDT,
                         'toDT'   => $request->toDT,
                     ]);
@@ -168,7 +168,7 @@ class UnavailabilityController extends Controller
                 }
 
                 return response()->json([
-                    'message' => 'Reccurring saved successfully',
+                    'message' => 'Recurring saved successfully',
                     'data'    => $unavail,
                 ]);
             }
