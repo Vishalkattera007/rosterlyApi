@@ -226,19 +226,25 @@ class UserProfileController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-   public function destroy(string $id)
-{
-    try {
-        $user = UserProfileModel::findOrFail($id);
-        
-        // Update status from 1 to 0 instead of deleting
+    public function destroy($id)
+    {
+        $user = UserProfileModel::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User profile not found.',
+            ], 404);
+        }
+
+        // Update status to 0 (inactive)
         $user->status = 0;
         $user->save();
 
-        return response()->json(['message' => 'User deactivated successfully'], 200);
-    } catch (Exception $e) {
-        return response()->json(['message' => 'Failed to deactivate user', 'error' => $e->getMessage()], 500);
+        return response()->json([
+            'success' => true,
+            'message' => 'User profile deactivated successfully.',
+        ]);
     }
-}
 
 }
