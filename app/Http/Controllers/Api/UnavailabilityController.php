@@ -52,28 +52,28 @@ class UnavailabilityController extends Controller
             if ($id != 2) {
                 // 1. Validate the datetime format
                 $validator = Validator::make($request->all(), [
-                    'fromDT' => ['required', 'date_format:Y-m-d h:i:s A'],
-                    'toDT'   => ['required', 'date_format:Y-m-d h:i:s A'],
+                    'fromDT' => ['required', 'date_format:Y-m-d h:i A'],
+                    'toDT'   => ['required', 'date_format:Y-m-d h:i A'],
                 ]);
 
                 if ($validator->fails()) {
                     return response()->json([
-                        'message' => 'Invalid datetime format. Expected format: Y-m-d h:i:s A',
+                        'message' => 'Invalid datetime format. Expected format: Y-m-d h:i A',
                         'errors'  => $validator->errors(),
                     ], 422);
                 }
 
                 // 2. Parse for consistency and comparison
-                $requestFromDT = Carbon::parse($request->fromDT)->format('Y-m-d h:i:s A');
-                $requestToDT   = Carbon::parse($request->toDT)->format('Y-m-d h:i:s A');
+                $requestFromDT = Carbon::parse($request->fromDT)->format('Y-m-d h:i A');
+                $requestToDT   = Carbon::parse($request->toDT)->format('Y-m-d h:i A');
 
                 // 3. Check for exact match in existing records
                 $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
                     ->get(['fromDT', 'toDT']);
 
                 foreach ($unavailDetails as $unavailDetail) {
-                    $existingFromDT = Carbon::parse($unavailDetail->fromDT)->format('Y-m-d h:i:s A');
-                    $existingToDT   = Carbon::parse($unavailDetail->toDT)->format('Y-m-d h:i:s A');
+                    $existingFromDT = Carbon::parse($unavailDetail->fromDT)->format('Y-m-d h:i A');
+                    $existingToDT   = Carbon::parse($unavailDetail->toDT)->format('Y-m-d h:i A');
 
                     if ($requestFromDT === $existingFromDT && $requestToDT === $existingToDT) {
                         return response()->json([
