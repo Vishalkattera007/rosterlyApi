@@ -109,7 +109,6 @@ class UserProfileController extends Controller
     }
 }
 
-  
     /**
      * Display the specified resource.
      */
