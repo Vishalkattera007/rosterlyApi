@@ -197,6 +197,28 @@ class UserProfileController extends Controller
     }
 
 
+    public function updateStatus(Request $request, string $id)
+{
+    try {
+        $user = UserProfileModel::findOrFail($id);
+
+        $user->update([
+            'status' => $request->status,
+            'updated_by' => $request->input('updated_by', $user->updated_by),
+        ]);
+
+        return response()->json([
+            'message' => 'User status updated successfully',
+            'data' => $user,
+        ], 200);
+    } catch (Exception $e) {
+        return response()->json([
+            'message' => 'Failed to update user status',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
 
     public function getUsersCreatedBy($loginId, Request $request)
     {
