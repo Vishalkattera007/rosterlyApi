@@ -130,17 +130,25 @@ class UnavailabilityController extends Controller
                         ], 400);
                     }
                 }
+
+                function normalizeTimeInput($timeStr)
+                {
+                    $clean = preg_replace('/\x{00A0}|\xC2\xA0|\s+/u', ' ', $timeStr);
+                    return strtoupper(trim($clean));
+                }
                 $statusMap = [
                     'pending'  => 0,
                     'approved' => 1,
                     'rejected' => 2,
                 ];
+                $fromTime               = normalizeTimeInput($request->fromDT);
+                $toTime                 = normalizeTimeInput($request->toDT);
                 $unavail                = new UnavailabilityModel();
                 $unavail->userId        = $request->userId;
                 $unavail->unavailType   = $id;
                 $unavail->day           = $request->day;
-                $unavail->fromDT        = Carbon::createFromFormat('h:i A', trim($request->fromDT))->format('h:i A');
-                $unavail->toDT          = Carbon::createFromFormat('h:i A', trim($request->toDT))->format('h:i A');
+                $unavail->fromDT        = Carbon::createFromFormat('h:i A', $fromTime);
+                $unavail->toDT          = Carbon::createFromFormat('h:i A', $toTime);
                 $unavail->reason        = $request->reason;
                 $unavail->notifyTo      = $request->notifyTo;
                 $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
@@ -149,7 +157,6 @@ class UnavailabilityController extends Controller
 
                 Log::info('Unavailability record saved successfully. ID: ' . $unavail->id);
 
-// Send notification
                 $notifyToUser = UserProfileModel::find($request->notifyTo);
 
                 if ($notifyToUser) {
