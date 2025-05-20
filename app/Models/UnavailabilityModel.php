@@ -10,10 +10,9 @@ class UnavailabilityModel extends Model
         'userId', // f - user_profiles
         'unavailType',
         'day',
-        'fromDate',
-        'toDate',
-        'startTime',
-        'endTime',
+        'fromDT',
+        'toDT',
+        'reason',
         'notifyTo', // f - user_profiles
         'unavailStatus',
         'created_on',

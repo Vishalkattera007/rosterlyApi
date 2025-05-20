@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\UnavailabilityModel;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
 
 class UnavailabilityController extends Controller
 {
@@ -19,7 +20,7 @@ class UnavailabilityController extends Controller
 
             $data = UnavailabilityModel::with(['userProfile', 'notifyToUserProfile'])
                 ->where('userId', $userId)
-                ->orderBy('fromDate', 'desc')
+                ->orderBy('fromDT', 'desc')
                 ->get();
 
             return response()->json($data);
@@ -31,57 +32,116 @@ class UnavailabilityController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-{
-    try {
-        // Check for overlapping unavailability
-        $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
-            ->get(['fromDate', 'toDate']);
+    public function store(Request $request, $id = null)
+    {
+        try {
+            if ($id == 2) {
+                // 1. Validate the datetime format
+                $validator = Validator::make($request->all(), [
+                    'fromDT' => ['required', 'date_format:Y-m-d H:i:s'],
+                    'toDT'   => ['required', 'date_format:Y-m-d H:i:s'],
+                ]);
 
-        if ($unavailDetails->isNotEmpty()) {
-            foreach ($unavailDetails as $unavailDetail) {
-                if (
-                    ($request->fromDate >= $unavailDetail->fromDate && $request->fromDate <= $unavailDetail->toDate) ||
-                    ($request->toDate >= $unavailDetail->fromDate && $request->toDate <= $unavailDetail->toDate) ||
-                    ($request->fromDate <= $unavailDetail->fromDate && $request->toDate >= $unavailDetail->toDate)
-                ) {
+                if ($validator->fails()) {
                     return response()->json([
-                        'message' => 'Unavailability already exists for the selected date range'
-                    ], 400);
+                        'message' => 'Invalid datetime format. Expected format: Y-m-d H:i:s',
+                        'errors'  => $validator->errors(),
+                    ], 422);
                 }
+
+                // 2. Parse for consistency and comparison
+                $requestFromDT = Carbon::parse($request->fromDT)->format('Y-m-d H:i:s');
+                $requestToDT   = Carbon::parse($request->toDT)->format('Y-m-d H:i:s');
+
+                // 3. Check for exact match in existing records
+                $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
+                    ->get(['fromDT', 'toDT']);
+
+                foreach ($unavailDetails as $unavailDetail) {
+                    $existingFromDT = Carbon::parse($unavailDetail->fromDT)->format('Y-m-d H:i:s');
+                    $existingToDT   = Carbon::parse($unavailDetail->toDT)->format('Y-m-d H:i:s');
+
+                    if ($requestFromDT === $existingFromDT && $requestToDT === $existingToDT) {
+                        return response()->json([
+                            'message' => 'Unavailability already exists for the selected date & time range',
+                        ], 400);
+                    }
+                }
+
+                $statusMap = [
+                    'pending'  => 0,
+                    'approved' => 1,
+                    'rejected' => 2,
+                ];
+
+                $unavail                = new UnavailabilityModel();
+                $unavail->userId        = $request->userId;
+                $unavail->unavailType   = $id;
+                $unavail->day           = null;
+                $unavail->fromDT        = Carbon::parse($request->fromDT);
+                $unavail->toDT          = Carbon::parse($request->toDT);
+                $unavail->reason        = $request->reason;
+                $unavail->notifyTo      = $request->notifyTo;
+                $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
+
+                $unavail->save();
+
+                return response()->json([
+                    'message' => 'Unavailability saved successfully',
+                    'data'    => $unavail,
+                ]);
+
+            } else {
+                // Reccuring Days Off
+                $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
+                    ->get(['fromDT', 'toDT']);
+
+                foreach ($unavailDetails as $unavailDetail) {
+                    $requestFromTime = Carbon::parse($request->fromDT)->format('H:i:s');
+                    $requestToTime   = Carbon::parse($request->toDT)->format('H:i:s');
+
+                    $existingFromTime = Carbon::parse($unavailDetail->fromDT)->format('H:i:s');
+                    $existingToTime   = Carbon::parse($unavailDetail->toDT)->format('H:i:s');
+
+                    if ($requestFromTime == $existingFromTime && $requestToTime == $existingToTime) {
+                        return response()->json([
+                            'message' => 'Reccuring already exists for the selected date range',
+                        ], 400);
+                    }
+                }
+
+                $statusMap = [
+                    'pending'  => 0,
+                    'approved' => 1,
+                    'rejected' => 2,
+                ];
+
+                $unavail                = new UnavailabilityModel();
+                $unavail->userId        = $request->userId;
+                $unavail->unavailType   = $id;
+                $unavail->day           = $request->day;
+                $unavail->fromDT        = Carbon::parse($request->fromDT)->format('H:i:s');
+                $unavail->toDT          = Carbon::parse($request->toDT)->format('H:i:s');
+                $unavail->reason        = $request->reason;
+                $unavail->notifyTo      = $request->notifyTo;
+                $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
+
+                $unavail->save();
+
+                return response()->json([
+                    'message' => 'Unavailability saved successfully',
+                    'data'    => $unavail,
+                ]);
             }
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to store unavailability',
+                'error'   => $e->getMessage(),
+            ], 500);
         }
 
-        // Status map (adjust as per your actual convention)
-        $statusMap = [
-            'pending'  => 0,
-            'approved' => 1,
-            'rejected' => 2
-        ];
-
-        // Save new unavailability
-        $unavail = new UnavailabilityModel();
-        $unavail->userId        = $request->userId;
-        $unavail->unavailType   = $request->unavailType;
-        $unavail->day           = $request->day;
-        $unavail->fromDate      = Carbon::parse($request->fromDate);
-        $unavail->toDate        = Carbon::parse($request->toDate);
-        $unavail->notifyTo      = $request->notifyTo;
-        $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0; // default to 'pending'
-
-        $unavail->save();
-
-        return response()->json([
-            'message' => 'Unavailability saved successfully',
-            'data' => $unavail
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Failed to store unavailability',
-            'error' => $e->getMessage()
-        ], 500);
     }
-}
 
     /**
      * Display the specified resource.
@@ -115,8 +175,8 @@ class UnavailabilityController extends Controller
 
             $unavail->unavailType   = $request->unavailType;
             $unavail->day           = $request->day;
-            $unavail->fromDate      = $request->fromDate;
-            $unavail->toDate        = $request->toDate;
+            $unavail->fromDT        = $request->fromDT;
+            $unavail->toDT          = $request->toDT;
             $unavail->startTime     = $request->startTime;
             $unavail->endTime       = $request->endTime;
             $unavail->notifyTo      = $request->notifyTo;

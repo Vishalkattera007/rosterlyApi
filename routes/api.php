@@ -35,7 +35,7 @@ Route::middleware('apiauth')->group(function () {
 
     Route::prefix('/unavailability')->group(function () {
         Route::get('/', [UnavailabilityController::class, 'index'])->name('unavail.index');
-        Route::post('/', [UnavailabilityController::class, 'store']);
+        Route::post('/{id}', [UnavailabilityController::class, 'store']);
         Route::get('{id}', [UnavailabilityController::class, 'show']);
         Route::put('{id}', [UnavailabilityController::class, 'update']);
         Route::delete('{id}', [UnavailabilityController::class, 'destroy']);
