@@ -25,6 +25,9 @@ class UserProfileModel extends Authenticatable
         'updated_by',
         'updated_at',
         'status',
+        'deletedstaus',
+        'deletedBy',
+        'deleted_at'
     ];
     protected $table  = 'user_profiles';
     protected $hidden = ['password', 'remember_token'];

@@ -34,7 +34,7 @@ Route::middleware('apiauth')->group(function () {
     Route::get('/roles', [RolesController::class, 'index'])->name('roles.index');
 
     Route::prefix('/unavailability')->group(function () {
-        Route::get('/', [UnavailabilityController::class, 'index'])->name('unavail.index');
+        Route::get('/unavailability', [UnavailabilityController::class, 'index'])->name('unavail.index');
         Route::post('/', [UnavailabilityController::class, 'store']);
         Route::get('{id}', [UnavailabilityController::class, 'show']);
         Route::put('{id}', [UnavailabilityController::class, 'update']);
