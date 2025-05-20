@@ -28,6 +28,7 @@ Route::middleware('apiauth')->group(function () {
         Route::get('/role/{id}', [UserProfileController::class, 'show'])->name('users.show');
         Route::get('/login/{loginId?}', [UserProfileController::class, 'getUsersCreatedBy']);
         Route::post('/filter', [UserProfileController::class, 'filterEmployees'])->name('users.filter');
+        Route::post('user-profile/{id}/status', [UserProfileController::class, 'updateStatus']);
 
     });
 

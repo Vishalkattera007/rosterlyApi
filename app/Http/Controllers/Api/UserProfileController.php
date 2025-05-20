@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
+
 
 
 class UserProfileController extends Controller
@@ -18,7 +20,7 @@ class UserProfileController extends Controller
     {
         $user = UserProfileModel::where('email', $request->email)->first();
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
@@ -26,7 +28,7 @@ class UserProfileController extends Controller
 
         return response()->json([
             'token' => $token,
-            'user'  => $user,
+            'user' => $user,
         ]);
     }
 
@@ -34,20 +36,20 @@ class UserProfileController extends Controller
     {
         if ($id != null) {
             $userProfile = UserProfileModel::find($id);
-            if (! $userProfile) {
+            if (!$userProfile) {
                 return response()->json([
                     'message' => 'User not found',
                 ], 404);
             }
             return response()->json([
                 'message' => 'User Profile found',
-                'data'    => $userProfile,
+                'data' => $userProfile,
             ]);
         } else {
-            $findAllUsers = UserProfileModel::all();
+            $findAllUsers = UserProfileModel::where('deletestatus', 0)->get();
             return response()->json([
                 'message' => 'userProfile list',
-                'data'    => $findAllUsers,
+                'data' => $findAllUsers,
             ]);
         }
     }
@@ -56,58 +58,58 @@ class UserProfileController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-{
-    try {
-        // Check if user already exists
-        $existingUser = UserProfileModel::where('email', $request->email)->first();
-        if ($existingUser) {
+    {
+        try {
+            // Check if user already exists
+            $existingUser = UserProfileModel::where('email', $request->email)->first();
+            if ($existingUser) {
+                return response()->json([
+                    'message' => "User already exists",
+                    'status' => false,
+                ], 409);
+            }
+
+            // Always generate random 8-character password
+            $generatedPassword = Str::random(8);
+
+            // Store profile image (if uploaded)
+            $profileImagePath = null;
+            if ($request->hasFile('profileImage')) {
+                $profileImagePath = $request->file('profileImage')->store('profile_images', 'public');
+            }
+
+            // Create user
+            $userCreate = UserProfileModel::create([
+                'role_id' => $request->role_id,
+                'firstName' => $request->firstName,
+                'lastName' => $request->lastName,
+                'email' => $request->email,
+                'password' => Hash::make($generatedPassword),
+                'dob' => $request->dob,
+                'mobileNumber' => $request->mobileNumber,
+                'payrate' => $request->payrate,
+                'profileImage' => $profileImagePath,
+                'created_by' => $request->created_by,
+                'created_at' => now(),
+            ]);
+
+            // Send generated password to user via email
+            Mail::to($request->email)->send(new SendPasswordMail($generatedPassword));
+
             return response()->json([
-                'message' => "User already exists",
-                'status'  => false,
-            ], 409);
+                'message' => "User created and a confirmation email has been sent to the user's email address.",
+                'data' => $userCreate,
+                'status' => true,
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => "Something went wrong",
+                'error' => $e->getMessage(),
+                'status' => false,
+            ], 500);
         }
-
-        // Always generate random 8-character password
-        $generatedPassword = Str::random(8);
-
-        // Store profile image (if uploaded)
-        $profileImagePath = null;
-        if ($request->hasFile('profileImage')) {
-            $profileImagePath = $request->file('profileImage')->store('profile_images', 'public');
-        }
-
-        // Create user
-        $userCreate = UserProfileModel::create([
-            'role_id'      => $request->role_id,
-            'firstName'    => $request->firstName,
-            'lastName'     => $request->lastName,
-            'email'        => $request->email,
-            'password'     => Hash::make($generatedPassword),
-            'dob'          => $request->dob,
-            'mobileNumber' => $request->mobileNumber,
-            'payrate'      => $request->payrate,
-            'profileImage' => $profileImagePath,
-            'created_by'   => $request->created_by,
-            'created_at'   => now(),
-        ]);
-
-        // Send generated password to user via email
-        Mail::to($request->email)->send(new SendPasswordMail($generatedPassword));
-
-        return response()->json([
-            'message' => "User created and a confirmation email has been sent to the user's email address.",
-            'data'    => $userCreate,
-            'status'  => true,
-        ], 201);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => "Something went wrong",
-            'error'   => $e->getMessage(),
-            'status'  => false,
-        ], 500);
     }
-}
 
     /**
      * Display the specified resource.
@@ -123,64 +125,96 @@ class UserProfileController extends Controller
 
         return response()->json([
             'message' => 'User Profiles found',
-            'role'    => $userRole->first()->role->role_name ?? 'unknown role',
-            'data'    => $userRole,
+            'role' => $userRole->first()->role->role_name ?? 'unknown role',
+            'data' => $userRole,
         ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-   public function update(Request $request, string $id)
+    public function update(Request $request, string $id)
+    {
+        try {
+            $user = UserProfileModel::findOrFail($id);
+
+            // If only "status" is in the request, do minimal update
+            if ($request->only(['status']) && count($request->all()) === 1) {
+                $user->update([
+                    'status' => $request->status,
+                    'updated_by' => $request->input('updated_by', $user->updated_by),
+                    // 'updated_at' => now(),
+                ]);
+
+                return response()->json([
+                    'message' => 'User status updated successfully',
+                    'data' => $user,
+                ], 200);
+            }
+
+            // Handle profile image upload
+            if ($request->hasFile('profileImage')) {
+                // Delete old image if exists
+                if ($user->profileImage && Storage::disk('public')->exists($user->profileImage)) {
+                    Storage::disk('public')->delete($user->profileImage);
+                }
+                // Store new image
+                $path = $request->file('profileImage')->store('profile_images', 'public');
+            } else {
+                $path = $user->profileImage;
+            }
+
+            // Handle password
+            $password = $request->filled('password') ? Hash::make($request->password) : $user->password;
+
+            // Full update
+            $user->update([
+                'role_id' => $request->input('role_id', $user->role_id),
+                'firstName' => $request->input('firstName', $user->firstName),
+                'lastName' => $request->input('lastName', $user->lastName),
+                'email' => $request->input('email', $user->email),
+                'password' => $password,
+                'dob' => $request->input('dob', $user->dob),
+                'mobileNumber' => $request->input('mobileNumber', $user->mobileNumber),
+                'location_id' => $request->input('location_id', $user->location_id),
+                'status' => $request->input('status', $user->status),
+                'payrate' => $request->input('payrate', $user->payrate),
+                'profileImage' => $path,
+                'updated_by' => $request->input('updated_by', $user->updated_by),
+                'updated_at' => now(),
+            ]);
+
+            return response()->json([
+                'message' => 'User updated successfully',
+                'data' => $user,
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed to update user',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+    public function updateStatus(Request $request, string $id)
 {
     try {
         $user = UserProfileModel::findOrFail($id);
 
-        // Handle profile image upload
-        if ($request->hasFile('profileImage')) {
-            // Delete old image if exists
-            if ($user->profileImage && Storage::disk('public')->exists($user->profileImage)) {
-                Storage::disk('public')->delete($user->profileImage);
-            }
-            // Store new image
-            $path = $request->file('profileImage')->store('profile_images', 'public');
-        } else {
-            $path = $user->profileImage;
-        }
-
-       // Determine password to store (hashed)
-        if ($request->filled('password')) {
-            $password = Hash::make($request->password);
-        } else {
-            $password = $user->password;  // keep existing hashed password
-        }
-
-        
-        // Update all other fields
         $user->update([
-            'role_id'      => $request->input('role_id', $user->role_id),
-            'firstName'    => $request->input('firstName', $user->firstName),
-            'lastName'     => $request->input('lastName', $user->lastName),
-            'email'        => $request->input('email', $user->email),
-            'password'     => $password,   // hashed or existing password
-            'dob'          => $request->input('dob', $user->dob),
-            'mobileNumber' => $request->input('mobileNumber', $user->mobileNumber),
-            'location_id'  => $request->input('location_id', $user->location_id),
-            'status'       => $request->input('status', $user->status),
-            'payrate'      => $request->input('payrate', $user->payrate),
-            'profileImage' => $path,
-            'updated_by'   => $request->input('updated_by', $user->updated_by),
-            'updated_at'   => now(),
+            'status' => $request->status,
+            'updated_by' => $request->input('updated_by', $user->updated_by),
         ]);
 
         return response()->json([
-            'message' => 'User updated successfully',
-            'data'    => $user,
+            'message' => 'User status updated successfully',
+            'data' => $user,
         ], 200);
     } catch (Exception $e) {
         return response()->json([
-            'message' => 'Failed to update user',
-            'error'   => $e->getMessage(),
+            'message' => 'Failed to update user status',
+            'error' => $e->getMessage(),
         ], 500);
     }
 }
@@ -194,7 +228,7 @@ class UserProfileController extends Controller
                 ->where('created_by', $loginId);
 
             // Optional: if you want to filter by location_id as well
-            if ($request->has('location_id') && ! empty($request->location_id)) {
+            if ($request->has('location_id') && !empty($request->location_id)) {
                 $query->where('location_id', $request->location_id);
             }
 
@@ -203,21 +237,21 @@ class UserProfileController extends Controller
             if ($users->isEmpty()) {
                 return response()->json([
                     'message' => 'No users found for the given creator.',
-                    'status'  => false,
+                    'status' => false,
                 ], 404);
             }
 
             return response()->json([
                 'message' => 'Users fetched successfully.',
-                'data'    => $users,
-                'status'  => true,
+                'data' => $users,
+                'status' => true,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Something went wrong.',
-                'error'   => $e->getMessage(),
-                'status'  => false,
+                'error' => $e->getMessage(),
+                'status' => false,
             ], 500);
         }
     }
@@ -225,19 +259,23 @@ class UserProfileController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-   public function destroy(string $id)
-{
-    try {
-        $user = UserProfileModel::findOrFail($id);
-        
-        // Update status from 1 to 0 instead of deleting
-        $user->status = 0;
+    public function destroy(Request $request, $id)
+    {
+        $user = UserProfileModel::find($id);
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $user->deletestatus = 1;
+        $user->deletedby = $request->deletedby;
+        $user->deleted_at = Carbon::now(); // or now() helper
+
+
         $user->save();
 
-        return response()->json(['message' => 'User deactivated successfully'], 200);
-    } catch (Exception $e) {
-        return response()->json(['message' => 'Failed to deactivate user', 'error' => $e->getMessage()], 500);
+        return response()->json(['message' => 'User soft-deleted successfully']);
     }
-}
+
 
 }
