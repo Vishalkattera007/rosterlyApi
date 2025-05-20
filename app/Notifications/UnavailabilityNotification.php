@@ -2,7 +2,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class UnavailabilityNotification extends Notification
@@ -11,30 +11,56 @@ class UnavailabilityNotification extends Notification
 
     protected $unavailability;
 
-    public function __construct(array $unavailability)
+    public function __construct($unavailability)
     {
+        //
         $this->unavailability = $unavailability;
     }
 
-    public function via($notifiable)
+    /**
+     * Get the notification's delivery channels.
+     *
+     * @return array<int, string>
+     */
+  
+    public function via(object $notifiable): array
     {
         return ['database'];
     }
 
-    public function toDatabase($notifiable)
-    {
-        Log::info('toDatabase method triggered for UnavailabilityNotification');
+    /**
+     * Get the mail representation of the notification.
+     */
+    // public function toMail(object $notifiable): MailMessage
+    // {
+    //     return (new MailMessage)
+    //         ->line('The introduction to the notification.')
+    //         ->action('Notification Action', url('/'))
+    //         ->line('Thank you for using our application!');
+    // }
 
+    public function toDatabase(object $notifiable): array
+    {
         return [
-            'title'   => 'New Unavailability Request',
-            'message' => 'User ' . $this->unavailability['userId'] . ' has submitted an unavailability request.',
-            'fromDT'  => $this->unavailability['fromDT'],
-            'toDT'    => $this->unavailability['toDT'],
+            'message' => 'Unavailability notification',
+            'data'    => [
+                'title'   => 'New Unavailability Request',
+                'message' => 'User ' . $this->unavailability['userId'] . ' has submitted an unavailability request.',
+                'fromDT'  => $this->unavailability['fromDT'],
+                'toDT'    => $this->unavailability['toDT'],
+            ],
         ];
     }
 
-    public function toArray($notifiable): array
+    /**
+     * Get the array representation of the notification.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(object $notifiable): array
     {
-        return $this->toDatabase($notifiable);
+        return [
+            //
+        ];
     }
 }

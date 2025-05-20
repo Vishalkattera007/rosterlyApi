@@ -1,14 +1,16 @@
 <?php
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use App\Models\UnavailabilityModel;
-use App\Models\UserProfileModel;
-use Carbon\Carbon;
+// use Illuminate\Support\Facades\Log;
 use Exception;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Models\UnavailabilityModel;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use App\Models\UserProfileModel;
 use Illuminate\Support\Facades\Validator;
+use App\Notifications\UnavailabilityNotification;
 
 class UnavailabilityController extends Controller
 {
@@ -96,36 +98,11 @@ class UnavailabilityController extends Controller
                 $unavail->notifyTo      = $request->notifyTo;
                 $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
 
-                if ($unavail->save()) {
-                    Log::info('Unavailability record saved successfully. ID: ' . $unavail->id);
-
-                    $notifyToUser = UserProfileModel::find($request->notifyTo);
-
-                    if ($notifyToUser) {
-                        Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
-
-                        $notification = new \App\Notifications\UnavailabilityNotification([
-                            'userId' => $request->userId, // correct: user making the request
-                            'fromDT' => $request->fromDT,
-                            'toDT'   => $request->toDT,
-                        ]);
-
-                        $notifyToUser->notify($notification);
-                        Log::info("Notification sent to user ID: " . $notifyToUser->id);
-                    } else {
-                        Log::warning('notifyTo user not found. ID: ' . $request->notifyTo);
-                    }
-
-                    return response()->json([
-                        'message' => 'Unavailability saved successfully',
-                        'data'    => $unavail,
-                    ]);
-                } else {
-                    Log::error('Failed to save unavailability record.');
-                    return response()->json([
-                        'message' => 'Failed to save unavailability',
-                    ], 500);
-                }
+                $unavail->save();
+                return response()->json([
+                    'message' => 'Unavailability saved successfully',
+                    'data'    => $unavail,
+                ]);
 
             } else {
                 // Reccuring Days Off
@@ -164,8 +141,27 @@ class UnavailabilityController extends Controller
 
                 $unavail->save();
 
+                Log::info('Unavailability record saved successfully. ID: ' . $unavail->id);
+                // Send notification to the user
+                $notifyToUser = UserProfileModel::find($request->notifyTo);
+
+                if ($notifyToUser) {
+                    Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
+
+                    $notification = new UnavailabilityNotification([
+                        'userId' => $request->userId, // correct: user making the request
+                        'fromDT' => $request->fromDT,
+                        'toDT'   => $request->toDT,
+                    ]);
+
+                    $notifyToUser->notify($notification);
+                    Log::info("Notification sent to user ID: " . $notifyToUser->id);
+                } else {
+                    Log::warning('notifyTo user not found. ID: ' . $request->notifyTo);
+                }
+
                 return response()->json([
-                    'message' => 'Unavailability saved successfully',
+                    'message' => 'Reccurring saved successfully',
                     'data'    => $unavail,
                 ]);
             }
