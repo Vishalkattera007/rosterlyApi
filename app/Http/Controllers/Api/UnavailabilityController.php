@@ -1,11 +1,11 @@
 <?php
 namespace App\Http\Controllers\Api;
 
-use Exception;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use App\Models\UnavailabilityModel;
 use App\Http\Controllers\Controller;
+use App\Models\UnavailabilityModel;
+use Carbon\Carbon;
+use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class UnavailabilityController extends Controller
@@ -35,7 +35,7 @@ class UnavailabilityController extends Controller
     public function store(Request $request, $id = null)
     {
         try {
-            if ($id == 2) {
+            if ($id != 2) {
                 // 1. Validate the datetime format
                 $validator = Validator::make($request->all(), [
                     'fromDT' => ['required', 'date_format:Y-m-d H:i:s'],
