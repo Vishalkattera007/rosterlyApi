@@ -13,17 +13,27 @@ class UnavailabilityController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index($id = null)
     {
         try {
-            $userId = $request->userId;
+            if ($id != null) {
+                $unavailability = UnavailabilityModel::with(['userProfile', 'notifyToUserProfile'])
+                    ->where('userId', $id)
+                    ->get();
 
-            $data = UnavailabilityModel::with(['userProfile', 'notifyToUserProfile'])
-                ->where('userId', $userId)
-                ->orderBy('fromDT', 'desc')
-                ->get();
+                return response()->json([
+                    'message' => 'Unavailability list',
+                    'data'    => $unavailability,
+                ]);
+            } else {
+                $unavailability = UnavailabilityModel::with(['userProfile', 'notifyToUserProfile'])
+                    ->get();
 
-            return response()->json($data);
+                return response()->json([
+                    'message' => 'Unavailability list',
+                    'data'    => $unavailability,
+                ]);
+            }
         } catch (Exception $e) {
             return response()->json(['message' => 'Failed to fetch unavailability list', 'error' => $e->getMessage()], 500);
         }
