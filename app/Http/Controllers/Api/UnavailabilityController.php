@@ -147,8 +147,8 @@ class UnavailabilityController extends Controller
                 $unavail->userId        = $request->userId;
                 $unavail->unavailType   = $id;
                 $unavail->day           = $request->day;
-                $unavail->fromDT        = Carbon::createFromFormat('h:i A', $fromTime);
-                $unavail->toDT          = Carbon::createFromFormat('h:i A', $toTime);
+                $unavail->fromDT        = Carbon::createFromFormat('h:i A', $fromTime)->format('h:i A');
+                $unavail->toDT          = Carbon::createFromFormat('h:i A', $toTime)->format('h:i A');
                 $unavail->reason        = $request->reason;
                 $unavail->notifyTo      = $request->notifyTo;
                 $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
