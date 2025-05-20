@@ -2,15 +2,15 @@
 namespace App\Http\Controllers\Api;
 
 // use Illuminate\Support\Facades\Log;
-use Exception;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use App\Models\UnavailabilityModel;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Models\UnavailabilityModel;
 use App\Models\UserProfileModel;
-use Illuminate\Support\Facades\Validator;
 use App\Notifications\UnavailabilityNotification;
+use Carbon\Carbon;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class UnavailabilityController extends Controller
 {
@@ -64,16 +64,18 @@ class UnavailabilityController extends Controller
                 }
 
                 // 2. Parse for consistency and comparison
-                $requestFromDT = Carbon::parse($request->fromDT)->format('Y-m-d H:i:s');
-                $requestToDT   = Carbon::parse($request->toDT)->format('Y-m-d H:i:s');
+                
+                $requestFromDT = Carbon::createFromFormat('Y-m-d h:i:s A', $request->fromDT)->format('Y-m-d H:i:s');
+                $requestToDT   = Carbon::createFromFormat('Y-m-d h:i:s A', $request->toDT)->format('Y-m-d H:i:s'); 
 
                 // 3. Check for exact match in existing records
                 $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
                     ->get(['fromDT', 'toDT']);
 
                 foreach ($unavailDetails as $unavailDetail) {
-                    $existingFromDT = Carbon::parse($unavailDetail->fromDT)->format('Y-m-d H:i:s');
-                    $existingToDT   = Carbon::parse($unavailDetail->toDT)->format('Y-m-d H:i:s');
+                    
+                    $existingFromDT = Carbon::createFromFormat('Y-m-d h:i:s A', $unavailDetail->fromDT)->format('Y-m-d H:i:s');
+                    $existingToDT   = Carbon::createFromFormat('Y-m-d h:i:s A', $unavailDetail->toDT)->format('Y-m-d H:i:s');
 
                     if ($requestFromDT === $existingFromDT && $requestToDT === $existingToDT) {
                         return response()->json([
@@ -110,15 +112,19 @@ class UnavailabilityController extends Controller
                     ->get(['fromDT', 'toDT']);
 
                 foreach ($unavailDetails as $unavailDetail) {
-                    $requestFromTime = Carbon::parse($request->fromDT)->format('H:i');
-                    $requestToTime   = Carbon::parse($request->toDT)->format('H:i');
+                    $requestFromTime = Carbon::createFromFormat('h:i A', $request->fromDT)->format('H:i A');
+                    $requestToTime   = Carbon::createFromFormat('h:i A', $request->toDT)->format('H:i A');
+                    
 
-                    $existingFromTime = Carbon::parse($unavailDetail->fromDT)->format('H:i');
-                    $existingToTime   = Carbon::parse($unavailDetail->toDT)->format('H:i');
+                    $existingFromTime = Carbon::createFromFormat('h:i A', $unavailDetail->fromDT);
+                    $existingToTime   = Carbon::createFromFormat('h:i A', $unavailDetail->toDT)->format('H:i A');
 
-                    if ($requestFromTime == $existingFromTime && $requestToTime == $existingToTime) {
+                    if (
+                        ($requestFromTime < $existingToTime) &&
+                        ($requestToTime > $existingFromTime)
+                    ) {
                         return response()->json([
-                            'message' => 'Reccuring already exists for the selected date range',
+                            'message' => 'Recurring unavailability already exists for the selected time range.',
                         ], 400);
                     }
                 }
@@ -133,8 +139,8 @@ class UnavailabilityController extends Controller
                 $unavail->userId        = $request->userId;
                 $unavail->unavailType   = $id;
                 $unavail->day           = $request->day;
-                $unavail->fromDT        = Carbon::parse($request->fromDT)->format('H:i');
-                $unavail->toDT          = Carbon::parse($request->toDT)->format('H:i');
+                $unavail->fromDT        = Carbon::parse($request->fromDT)->format('H:i A');
+                $unavail->toDT          = Carbon::parse($request->toDT)->format('H:i A');
                 $unavail->reason        = $request->reason;
                 $unavail->notifyTo      = $request->notifyTo;
                 $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
