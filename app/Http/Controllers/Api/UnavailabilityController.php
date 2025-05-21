@@ -10,7 +10,6 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 
 class UnavailabilityController extends Controller
 {
@@ -95,11 +94,12 @@ class UnavailabilityController extends Controller
                     Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
 
                     $notification = new UnavailabilityNotification([
-                        'title' => 'Unavailability Notification',
+                        'title'  => 'Unavailability Notification',
                         'userId' => $request->userId, // correct: user making the request
                         'fromDT' => $request->fromDT,
                         'toDT'   => $request->toDT,
                         'reason' => $request->reason,
+                        'unavailId' => $unavail->id,
                     ]);
 
                     $notifyToUser->notify($notification);
@@ -161,10 +161,12 @@ class UnavailabilityController extends Controller
                     Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
 
                     $notification = new UnavailabilityNotification([
+                        'title'  => 'Recurring Notification',
                         'userId' => $request->userId, // correct: user making the request
                         'fromDT' => $request->fromDT,
                         'toDT'   => $request->toDT,
                         'reason' => $request->reason,
+                        'unavailId' => $unavail->id,
                     ]);
 
                     $notifyToUser->notify($notification);

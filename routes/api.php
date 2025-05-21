@@ -9,12 +9,17 @@ use App\Http\Controllers\Api\UnavailabilityController;
 use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
-    Route::post('/login', [UserProfileController::class, 'login']);
-    Route::post('/forgotPassword', [ForgotPasswordController::class, 'forgotPassword']);
-    Route::get('/locationSales/location/{id?}', [LocationSalesController::class, 'index']);
-    Route::put('/locationSales/{id}', [LocationSalesController::class, 'update']);
+Route::post('/login', [UserProfileController::class, 'login']);
+Route::post('/forgotPassword', [ForgotPasswordController::class, 'forgotPassword']);
+Route::get('/locationSales/location/{id?}', [LocationSalesController::class, 'index']);
+Route::put('/locationSales/{id}', [LocationSalesController::class, 'update']);
+
+Route::put('/notifications/{id}', [UserProfileController::class, 'markAsRead']);
 
 Route::middleware('apiauth')->group(function () {
+    Route::get('/notifications', [UserProfileController::class, 'getNotifications']);
+    Route::post('/notifications', [UserProfileController::class, 'markAllAsRead']);
+
     Route::post('/logout', [UserProfileController::class, 'logout']);
     Route::post('/changePassword', [ChangePasswordController::class, 'changePassword']);
 
