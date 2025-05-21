@@ -95,6 +95,7 @@ class UnavailabilityController extends Controller
                     Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
 
                     $notification = new UnavailabilityNotification([
+                        'title' => 'Unavailability Notification',
                         'userId' => $request->userId, // correct: user making the request
                         'fromDT' => $request->fromDT,
                         'toDT'   => $request->toDT,
