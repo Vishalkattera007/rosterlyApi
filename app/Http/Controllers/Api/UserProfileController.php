@@ -270,8 +270,6 @@ class UserProfileController extends Controller
         $user->deletestatus = 1;
         $user->deletedby = $request->deletedby;
         $user->deleted_at = Carbon::now(); // or now() helper
-
-
         $user->save();
 
         return response()->json(['message' => 'User soft-deleted successfully']);
