@@ -87,6 +87,26 @@ class UnavailabilityController extends Controller
                 $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
 
                 $unavail->save();
+
+                Log::info('Reccurring record saved successfully. ID: ' . $unavail->id);
+                // Send notification to the user
+                $notifyToUser = UserProfileModel::find($request->notifyTo);
+                if ($notifyToUser) {
+                    Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
+
+                    $notification = new UnavailabilityNotification([
+                        'userId' => $request->userId, // correct: user making the request
+                        'fromDT' => $request->fromDT,
+                        'toDT'   => $request->toDT,
+                        'reason' => $request->reason,
+                    ]);
+
+                    $notifyToUser->notify($notification);
+                    Log::info("Notification sent to user ID: " . $notifyToUser->id);
+                } else {
+                    Log::warning('notifyTo user not found. ID: ' . $request->notifyTo);
+                }
+
                 return response()->json([
                     'message' => 'Unavailability saved successfully',
                     'data'    => $unavail,
