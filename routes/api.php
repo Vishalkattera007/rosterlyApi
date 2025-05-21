@@ -10,8 +10,6 @@ use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
     Route::post('/login', [UserProfileController::class, 'login']);
-    Route::post('/  ', [ForgotPasswordController::class, 'forgotPassword']);
-    Route::post('/login', [UserProfileController::class, 'login']);
     Route::post('/forgotPassword', [ForgotPasswordController::class, 'forgotPassword']);
     Route::get('/locationSales/location/{id?}', [LocationSalesController::class, 'index']);
     Route::put('/locationSales/{id}', [LocationSalesController::class, 'update']);
@@ -27,7 +25,6 @@ Route::middleware('apiauth')->group(function () {
         Route::delete('{id}', [UserProfileController::class, 'destroy']);
         Route::get('/role/{id}', [UserProfileController::class, 'show'])->name('users.show');
         Route::get('/login/{loginId?}', [UserProfileController::class, 'getUsersCreatedBy']);
-        Route::post('/filter', [UserProfileController::class, 'filterEmployees'])->name('users.filter');
         Route::post('user-profile/{id}/status', [UserProfileController::class, 'updateStatus']);
 
     });
@@ -40,6 +37,7 @@ Route::middleware('apiauth')->group(function () {
         Route::get('{id}', [UnavailabilityController::class, 'show']);
         Route::put('{id}', [UnavailabilityController::class, 'update']);
         Route::delete('{id}', [UnavailabilityController::class, 'destroy']);
+
     });
 
     Route::prefix('locations')->group(function () {

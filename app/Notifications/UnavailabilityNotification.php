@@ -46,6 +46,7 @@ class UnavailabilityNotification extends Notification
             'data'    => [
                 'title'   => 'New Unavailability Request',
                 'message' => 'User ' . $this->unavailability['userId'] . ' has submitted an unavailability request.',
+                'reason' => $this->unavailability['reason'],
                 'fromDT'  => $this->unavailability['fromDT'],
                 'toDT'    => $this->unavailability['toDT'],
             ],
