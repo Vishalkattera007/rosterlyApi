@@ -144,7 +144,7 @@ class UnavailabilityController extends Controller
 
                 $unavail->save();
 
-                Log::info('Unavailability record saved successfully. ID: ' . $unavail->id);
+                Log::info('Reccurring record saved successfully. ID: ' . $unavail->id);
                 // Send notification to the user
                 $notifyToUser = UserProfileModel::find($request->notifyTo);
 
@@ -155,6 +155,7 @@ class UnavailabilityController extends Controller
                         'userId' => $request->userId, // correct: user making the request
                         'fromDT' => $request->fromDT,
                         'toDT'   => $request->toDT,
+                        'reason' => $request->reason,
                     ]);
 
                     $notifyToUser->notify($notification);

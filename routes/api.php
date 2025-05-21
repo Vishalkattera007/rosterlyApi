@@ -37,6 +37,7 @@ Route::middleware('apiauth')->group(function () {
         Route::get('{id}', [UnavailabilityController::class, 'show']);
         Route::put('{id}', [UnavailabilityController::class, 'update']);
         Route::delete('{id}', [UnavailabilityController::class, 'destroy']);
+
     });
 
     Route::prefix('locations')->group(function () {
