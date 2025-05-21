@@ -50,18 +50,6 @@ class UnavailabilityController extends Controller
     {
         try {
             if ($id != 2) {
-                // 1. Validate the datetime format
-                // $validator = Validator::make($request->all(), [
-                //     'fromDT' => ['required', 'date_format:Y-m-d h:i A'],
-                //     'toDT'   => ['required', 'date_format:Y-m-d h:i A'],
-                // ]);
-
-                // if ($validator->fails()) {
-                //     return response()->json([
-                //         'message' => 'Invalid datetime format. Expected format: Y-m-d h:i A',
-                //         'errors'  => $validator->errors(),
-                //     ], 422);
-                // }
 
                 // 2. Parse for consistency and comparison
                 $requestFromDT = Carbon::parse($request->fromDT)->format('Y-m-d h:i A');
