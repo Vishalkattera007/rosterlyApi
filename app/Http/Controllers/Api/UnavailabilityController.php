@@ -425,6 +425,7 @@ class UnavailabilityController extends Controller
                 'toDT'      => $request->toDT,
                 'reason'    => $request->reason,
                 'unavailId' => $unavail->id,
+                'day'   => $request->day,
             ]);
 
             $notifyToUser->notify($notification);

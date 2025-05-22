@@ -41,6 +41,8 @@ class UnavailabilityNotification extends Notification
                 'userId' => $this->unavailability['userId'],
                 'userName' => $this->unavailability['userName'],
                 'unavailabilityId' => $this->unavailability['unavailId'],
+                'day'=> $this->unavailability['day'],
+                'unavailType' => $this->unavailability['unavailType'],
             ],
         ];
     }
