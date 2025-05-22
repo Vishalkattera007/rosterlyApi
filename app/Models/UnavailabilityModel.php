@@ -15,6 +15,8 @@ class UnavailabilityModel extends Model
         'reason',
         'notifyTo', // f - user_profiles
         'unavailStatus',
+        'statusUpdated_at',
+        'statusUpdated_by',
         'created_on',
         'updated_on',
         'updated_by',
