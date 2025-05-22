@@ -2,7 +2,6 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class UnavailabilityNotification extends Notification
@@ -28,16 +27,6 @@ class UnavailabilityNotification extends Notification
         return ['database'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
-    // public function toMail(object $notifiable): MailMessage
-    // {
-    //     return (new MailMessage)
-    //         ->line('The introduction to the notification.')
-    //         ->action('Notification Action', url('/'))
-    //         ->line('Thank you for using our application!');
-    // }
 
     public function toDatabase(object $notifiable): array
     {
@@ -50,6 +39,7 @@ class UnavailabilityNotification extends Notification
                 'fromDT'  => $this->unavailability['fromDT'],
                 'toDT'    => $this->unavailability['toDT'],
                 'userId' => $this->unavailability['userId'],
+                'userName' => $this->unavailability['userName'],
                 'unavailabilityId' => $this->unavailability['unavailId'],
             ],
         ];

@@ -90,15 +90,23 @@ class UnavailabilityController extends Controller
                 Log::info('Reccurring record saved successfully. ID: ' . $unavail->id);
                 // Send notification to the user
                 $notifyToUser = UserProfileModel::find($request->notifyTo);
+                 $user         = UserProfileModel::find($request->userId);
+
+                if ($user) {
+                    $userName = $user->firstName . ' ' . $user->lastName;
+                } else {
+                    $userName = 'Unknown User';
+                }
                 if ($notifyToUser) {
                     Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
 
                     $notification = new UnavailabilityNotification([
-                        'title'  => 'Unavailability Notification',
-                        'userId' => $request->userId, // correct: user making the request
-                        'fromDT' => $request->fromDT,
-                        'toDT'   => $request->toDT,
-                        'reason' => $request->reason,
+                        'title'     => 'Unavailability Notification',
+                        'userId'    => $request->userId,
+                        'userName'  => $userName,
+                        'fromDT'    => $request->fromDT,
+                        'toDT'      => $request->toDT,
+                        'reason'    => $request->reason,
                         'unavailId' => $unavail->id,
                     ]);
 
@@ -156,16 +164,24 @@ class UnavailabilityController extends Controller
                 Log::info('Reccurring record saved successfully. ID: ' . $unavail->id);
                 // Send notification to the user
                 $notifyToUser = UserProfileModel::find($request->notifyTo);
+                $user         = UserProfileModel::find($request->userId);
+
+                if ($user) {
+                    $userName = $user->firstName . ' ' . $user->lastName;
+                } else {
+                    $userName = 'Unknown User';
+                }
 
                 if ($notifyToUser) {
                     Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
 
                     $notification = new UnavailabilityNotification([
-                        'title'  => 'Recurring Notification',
-                        'userId' => $request->userId, // correct: user making the request
-                        'fromDT' => $request->fromDT,
-                        'toDT'   => $request->toDT,
-                        'reason' => $request->reason,
+                        'title'     => 'Recurring Notification',
+                        'userId'    => $request->userId,
+                        'userName'  => $userName, // correct: user making the request
+                        'fromDT'    => $request->fromDT,
+                        'toDT'      => $request->toDT,
+                        'reason'    => $request->reason,
                         'unavailId' => $unavail->id,
                     ]);
 
