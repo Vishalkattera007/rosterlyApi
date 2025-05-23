@@ -334,7 +334,7 @@ class UserProfileController extends Controller
         UnavailabilityModel::where('id', $data['unavailabilityId'] ?? null)
             ->update([
                 'unavailStatus' => $request->action,
-                'updated_by'    => $manager->id,
+                'statusUpdated_by'=> $manager->id,
             ]);
 
         $employee = UserProfileModel::find($employeeId);
