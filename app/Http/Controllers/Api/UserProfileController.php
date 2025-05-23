@@ -9,6 +9,7 @@ use App\Notifications\UnavailabilityResponseNotification;
 use Carbon\Carbon;
 use Http\Discovery\Exception;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB as Enter;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
