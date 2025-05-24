@@ -61,6 +61,15 @@ class UserProfileController extends Controller
     public function store(Request $request)
     {
         try {
+
+            $validatePayratePercent = $request->payratePercent ?? 0;
+            if ($validatePayratePercent < 0 || $validatePayratePercent > 100) {
+                return response()->json([
+                    'message' => "Pay rate percent must be between 0 and 100",
+                    'status'  => false,
+                ], 400);
+            }
+
             // Check if user already exists
             $existingUser = UserProfileModel::where('email', $request->email)->first();
             if ($existingUser) {
