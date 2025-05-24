@@ -90,18 +90,18 @@ class UserProfileController extends Controller
 
             // Create user
             $userCreate = UserProfileModel::create([
-                'role_id'      => $request->role_id,
-                'firstName'    => $request->firstName,
-                'lastName'     => $request->lastName,
-                'email'        => $request->email,
-                'password'     => Hash::make($generatedPassword),
-                'dob'          => $request->dob,
-                'mobileNumber' => $request->mobileNumber,
-                'payrate'      => $request->payrate,
-                'payratePercent'     => $validatePayratePercent,
-                'profileImage' => $profileImagePath,
-                'created_by'   => $request->created_by,
-                'created_at'   => now(),
+                'role_id'        => $request->role_id,
+                'firstName'      => $request->firstName,
+                'lastName'       => $request->lastName,
+                'email'          => $request->email,
+                'password'       => Hash::make($generatedPassword),
+                'dob'            => $request->dob,
+                'mobileNumber'   => $request->mobileNumber,
+                'payrate'        => $request->payrate,
+                'payratePercent' => $validatePayratePercent,
+                'profileImage'   => $profileImagePath,
+                'created_by'     => $request->created_by,
+                'created_at'     => now(),
             ]);
 
             // Send generated password to user via email
@@ -149,7 +149,7 @@ class UserProfileController extends Controller
         try {
             $user = UserProfileModel::findOrFail($id);
 
-             $validatePayratePercent = $request->payratePercent ?? 0;
+            $validatePayratePercent = $request->payratePercent ?? 0;
             if ($validatePayratePercent < 0 || $validatePayratePercent > 100) {
                 return response()->json([
                     'message' => "Pay rate percent must be between 0 and 100",
@@ -188,20 +188,20 @@ class UserProfileController extends Controller
 
             // Full update
             $user->update([
-                'role_id'      => $request->input('role_id', $user->role_id),
-                'firstName'    => $request->input('firstName', $user->firstName),
-                'lastName'     => $request->input('lastName', $user->lastName),
-                'email'        => $request->input('email', $user->email),
-                'password'     => $password,
-                'dob'          => $request->input('dob', $user->dob),
-                'mobileNumber' => $request->input('mobileNumber', $user->mobileNumber),
-                'location_id'  => $request->input('location_id', $user->location_id),
-                'status'       => $request->input('status', $user->status),
-                'payrate'      => $request->input('payrate', $user->payrate),
+                'role_id'        => $request->input('role_id', $user->role_id),
+                'firstName'      => $request->input('firstName', $user->firstName),
+                'lastName'       => $request->input('lastName', $user->lastName),
+                'email'          => $request->input('email', $user->email),
+                'password'       => $password,
+                'dob'            => $request->input('dob', $user->dob),
+                'mobileNumber'   => $request->input('mobileNumber', $user->mobileNumber),
+                'location_id'    => $request->input('location_id', $user->location_id),
+                'status'         => $request->input('status', $user->status),
+                'payrate'        => $request->input('payrate', $user->payrate),
                 'payratePercent' => $request->input('payratePercent', $validatePayratePercent),
-                'profileImage' => $path,
-                'updated_by'   => $request->input('updated_by', $user->updated_by),
-                'updated_at'   => now(),
+                'profileImage'   => $path,
+                'updated_by'     => $request->input('updated_by', $user->updated_by),
+                'updated_at'     => now(),
             ]);
 
             return response()->json([
@@ -279,20 +279,27 @@ class UserProfileController extends Controller
      */
     public function destroy(Request $request, $id)
     {
+        
         $user = UserProfileModel::find($id);
 
         if (! $user) {
             return response()->json(['message' => 'User not found'], 404);
         }
 
+        // Validate the incoming deletedby field (optional but recommended)
+        if (! $request->has('deletedby') || empty($request->deletedby)) {
+            return response()->json(['message' => 'deletedby field is required.'], 400);
+        }
+
+        // Perform soft delete
         $user->deletestatus = 1;
         $user->deletedby    = $request->deletedby;
-        $user->deleted_at   = Carbon::now(); // or now() helper
+        $user->deleted_at   = Carbon::now();
         $user->save();
 
         return response()->json(['message' => 'User soft-deleted successfully']);
     }
-
+    
     public function getnotifications(Request $request)
     {
         $user = $request->user('api'); // Authenticated user
