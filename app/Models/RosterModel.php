@@ -10,19 +10,23 @@ class RosterModel extends Model
     protected $fillable = [
         'user_id',
         'location_id',
-        'Date',
-        'StartTime',
-        'EndTime',
+        'date',
+        'startTime',
+        'endTime',
+        'breakTime',
         'totalHrs',
         'hrsRate',
         'percentRate',
         'totalPay',
+        'description',
+        'created_by',
+        'updated_by',
         'status',
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(UserProfileModel::class, 'user_id');
     }
 
     public function location()
