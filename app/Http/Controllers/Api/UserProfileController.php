@@ -243,7 +243,7 @@ class UserProfileController extends Controller
         try {
             // Build query: fetch users where created_by = given login ID
             $query = UserProfileModel::with('location')
-                ->where('created_by', $loginId);
+                ->where('created_by', $loginId)->where('deletestatus', 0);
 
             // Optional: if you want to filter by location_id as well
             if ($request->has('location_id') && ! empty($request->location_id)) {
@@ -299,7 +299,7 @@ class UserProfileController extends Controller
 
         return response()->json(['message' => 'User soft-deleted successfully']);
     }
-    
+
     public function getnotifications(Request $request)
     {
         $user = $request->user('api'); // Authenticated user
