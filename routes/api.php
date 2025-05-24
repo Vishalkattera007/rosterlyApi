@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\LocationSalesController;
 use App\Http\Controllers\Api\RolesController;
+use App\Http\Controllers\Api\RosterController;
 use App\Http\Controllers\Api\UnavailabilityController;
 use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,7 @@ Route::get('/locationSales/location/{id?}', [LocationSalesController::class, 'in
 Route::put('/locationSales/{id}', [LocationSalesController::class, 'update']);
 
 Route::put('/notifications/{id}', [UserProfileController::class, 'markAsRead']);
+Route::get('rosterfetch/{id?}', [RosterController::class, 'index']);
 
 Route::middleware('apiauth')->group(function () {
     Route::get('/notifications', [UserProfileController::class, 'getNotifications']);

@@ -89,6 +89,7 @@ class UserProfileController extends Controller
                 'dob'          => $request->dob,
                 'mobileNumber' => $request->mobileNumber,
                 'payrate'      => $request->payrate,
+                'payratePercent'     => $request->payratePercent,
                 'profileImage' => $profileImagePath,
                 'created_by'   => $request->created_by,
                 'created_at'   => now(),
@@ -332,8 +333,8 @@ class UserProfileController extends Controller
 
         UnavailabilityModel::where('id', $data['unavailabilityId'] ?? null)
             ->update([
-                'unavailStatus' => $request->action,
-                'statusUpdated_by'=> $manager->id,
+                'unavailStatus'    => $request->action,
+                'statusUpdated_by' => $manager->id,
             ]);
 
         $employee = UserProfileModel::find($employeeId);
