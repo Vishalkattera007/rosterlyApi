@@ -98,7 +98,7 @@ class UserProfileController extends Controller
                 'dob'          => $request->dob,
                 'mobileNumber' => $request->mobileNumber,
                 'payrate'      => $request->payrate,
-                'payratePercent'     => $request->payratePercent,
+                'payratePercent'     => $validatePayratePercent,
                 'profileImage' => $profileImagePath,
                 'created_by'   => $request->created_by,
                 'created_at'   => now(),
@@ -149,6 +149,14 @@ class UserProfileController extends Controller
         try {
             $user = UserProfileModel::findOrFail($id);
 
+             $validatePayratePercent = $request->payratePercent ?? 0;
+            if ($validatePayratePercent < 0 || $validatePayratePercent > 100) {
+                return response()->json([
+                    'message' => "Pay rate percent must be between 0 and 100",
+                    'status'  => false,
+                ], 400);
+            }
+
             // If only "status" is in the request, do minimal update
             if ($request->only(['status']) && count($request->all()) === 1) {
                 $user->update([
@@ -190,6 +198,7 @@ class UserProfileController extends Controller
                 'location_id'  => $request->input('location_id', $user->location_id),
                 'status'       => $request->input('status', $user->status),
                 'payrate'      => $request->input('payrate', $user->payrate),
+                'payratePercent' => $request->input('payratePercent', $validatePayratePercent),
                 'profileImage' => $path,
                 'updated_by'   => $request->input('updated_by', $user->updated_by),
                 'updated_at'   => now(),
