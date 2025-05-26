@@ -366,10 +366,12 @@ class UserProfileController extends Controller
                     'message' => 'Employee not found',
                 ], 404);
             } else {
+                $action = strtolower($request->input('action', 'updated'));
+                $managerName = trim("{$manager->firstName} {$manager->lastName}");
                 $employee->notify(new UnavailabilityResponseNotification([
-                    'status'  => $request->action,
+                    'status'  => $action,
                     'manager' => $manager->firstName . ' ' . $manager->lastName,
-                    'message' => "Your leave request has been {$request->action} by {$manager->name}.",
+                    'message' => "Your leave request has been {$request->action} by {$managerName}.",
                 ]));
                 return response()->json([
                     'message' => 'Notifications marked as read successfully',
