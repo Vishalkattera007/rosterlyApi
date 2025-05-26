@@ -295,6 +295,7 @@ class UserProfileController extends Controller
                 'id'            => $notifing->id,
                 'notifiable_id' => $notifing->notifiable_id,
                 'data'          => json_decode($notifing->data),
+                'read_at'      => $notifing->read_at,
             ];
         });
         return response()->json([
