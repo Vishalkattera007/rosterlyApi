@@ -18,4 +18,10 @@ class LocationModel extends Model
 
     ];
     protected $table = 'locations';
+
+    public function locations()
+{
+    $locationIds = $this->getLocationIdsAttribute(); // explode CSV
+    return LocationModel::whereIn('id', $locationIds)->get();
+}
 }

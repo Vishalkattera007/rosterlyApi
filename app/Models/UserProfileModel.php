@@ -46,4 +46,28 @@ class UserProfileModel extends Authenticatable
     {
         return $this->hasMany(UnavailabilityModel::class, 'userId', 'id');
     }
+
+    // Get locations as array
+    // Accessor to get location IDs as array
+public function getLocationIdsAttribute()
+{
+    return $this->location_id ? explode(',', $this->location_id) : [];
+}
+
+// Method to add new locations
+public function addLocations(array $newLocationIds)
+{
+    $existing = $this->location_ids; // uses accessor above
+    $merged = array_unique(array_merge($existing, $newLocationIds));
+    $this->location_id = implode(',', $merged);
+    $this->save();
+}
+
+
+    // Get Location models for assigned location IDs
+    public function locations()
+    {
+        $locationIds = $this->getLocationIdsAttribute();
+        return LocationModel::whereIn('id', $locationIds)->get();
+    }
 }

@@ -189,4 +189,33 @@ class LocationController extends Controller
     }
 
 
+    public function assignLocationToEmployees(Request $request)
+{
+    $locationId = $request->location_id;
+    $duplicateUsers = [];
+    $assignedUsers = [];
+
+    foreach ($request->employee_ids as $employeeId) {
+        $user = UserProfileModel::find($employeeId);
+        $existingLocations = $user->location_ids;
+
+        if (in_array($locationId, $existingLocations)) {
+            $duplicateUsers[] = $user->firstName . ' ' . $user->lastName;
+            continue;
+        }
+
+        $user->addLocations([$locationId]);
+        $assignedUsers[] = $user->id;
+    }
+
+    return response()->json([
+        'status' => true,
+        'message' => count($duplicateUsers)
+            ? 'Some users were already assigned to this location.'
+            : 'All users assigned successfully.',
+        'already_assigned' => $duplicateUsers,
+        'newly_assigned_ids' => $assignedUsers,
+    ]);
+}
+
 }

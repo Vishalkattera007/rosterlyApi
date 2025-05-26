@@ -57,5 +57,7 @@ Route::middleware('apiauth')->group(function () {
         // Fetch users by location ID
         Route::get('/{locationId}/role/{roleId}', [LocationController::class, 'getRolesByLocationId']);
         Route::get('/{location_id}/users', [LocationController::class, 'getUsersByLocation']);
+        Route::post('/assignlocations', [LocationController::class, 'assignLocationToEmployees']);
+
     });
 });
