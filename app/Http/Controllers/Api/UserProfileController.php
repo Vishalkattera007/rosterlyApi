@@ -9,6 +9,7 @@ use App\Notifications\UnavailabilityResponseNotification;
 use Carbon\Carbon;
 use Http\Discovery\Exception;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB as Enter;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -61,15 +62,6 @@ class UserProfileController extends Controller
     public function store(Request $request)
     {
         try {
-
-            $validatePayratePercent = $request->payratePercent ?? 0;
-            if ($validatePayratePercent < 0 || $validatePayratePercent > 100) {
-                return response()->json([
-                    'message' => "Pay rate percent must be between 0 and 100",
-                    'status'  => false,
-                ], 400);
-            }
-
             // Check if user already exists
             $existingUser = UserProfileModel::where('email', $request->email)->first();
             if ($existingUser) {
@@ -90,18 +82,17 @@ class UserProfileController extends Controller
 
             // Create user
             $userCreate = UserProfileModel::create([
-                'role_id'        => $request->role_id,
-                'firstName'      => $request->firstName,
-                'lastName'       => $request->lastName,
-                'email'          => $request->email,
-                'password'       => Hash::make($generatedPassword),
-                'dob'            => $request->dob,
-                'mobileNumber'   => $request->mobileNumber,
-                'payrate'        => $request->payrate,
-                'payratePercent' => $validatePayratePercent,
-                'profileImage'   => $profileImagePath,
-                'created_by'     => $request->created_by,
-                'created_at'     => now(),
+                'role_id'      => $request->role_id,
+                'firstName'    => $request->firstName,
+                'lastName'     => $request->lastName,
+                'email'        => $request->email,
+                'password'     => Hash::make($generatedPassword),
+                'dob'          => $request->dob,
+                'mobileNumber' => $request->mobileNumber,
+                'payrate'      => $request->payrate,
+                'profileImage' => $profileImagePath,
+                'created_by'   => $request->created_by,
+                'created_at'   => now(),
             ]);
 
             // Send generated password to user via email
@@ -149,14 +140,6 @@ class UserProfileController extends Controller
         try {
             $user = UserProfileModel::findOrFail($id);
 
-            $validatePayratePercent = $request->payratePercent ?? 0;
-            if ($validatePayratePercent < 0 || $validatePayratePercent > 100) {
-                return response()->json([
-                    'message' => "Pay rate percent must be between 0 and 100",
-                    'status'  => false,
-                ], 400);
-            }
-
             // If only "status" is in the request, do minimal update
             if ($request->only(['status']) && count($request->all()) === 1) {
                 $user->update([
@@ -188,20 +171,19 @@ class UserProfileController extends Controller
 
             // Full update
             $user->update([
-                'role_id'        => $request->input('role_id', $user->role_id),
-                'firstName'      => $request->input('firstName', $user->firstName),
-                'lastName'       => $request->input('lastName', $user->lastName),
-                'email'          => $request->input('email', $user->email),
-                'password'       => $password,
-                'dob'            => $request->input('dob', $user->dob),
-                'mobileNumber'   => $request->input('mobileNumber', $user->mobileNumber),
-                'location_id'    => $request->input('location_id', $user->location_id),
-                'status'         => $request->input('status', $user->status),
-                'payrate'        => $request->input('payrate', $user->payrate),
-                'payratePercent' => $request->input('payratePercent', $validatePayratePercent),
-                'profileImage'   => $path,
-                'updated_by'     => $request->input('updated_by', $user->updated_by),
-                'updated_at'     => now(),
+                'role_id'      => $request->input('role_id', $user->role_id),
+                'firstName'    => $request->input('firstName', $user->firstName),
+                'lastName'     => $request->input('lastName', $user->lastName),
+                'email'        => $request->input('email', $user->email),
+                'password'     => $password,
+                'dob'          => $request->input('dob', $user->dob),
+                'mobileNumber' => $request->input('mobileNumber', $user->mobileNumber),
+                'location_id'  => $request->input('location_id', $user->location_id),
+                'status'       => $request->input('status', $user->status),
+                'payrate'      => $request->input('payrate', $user->payrate),
+                'profileImage' => $path,
+                'updated_by'   => $request->input('updated_by', $user->updated_by),
+                'updated_at'   => now(),
             ]);
 
             return response()->json([
@@ -243,7 +225,7 @@ class UserProfileController extends Controller
         try {
             // Build query: fetch users where created_by = given login ID
             $query = UserProfileModel::with('location')
-                ->where('created_by', $loginId)->where('deletestatus', 0);
+                ->where('created_by', $loginId);
 
             // Optional: if you want to filter by location_id as well
             if ($request->has('location_id') && ! empty($request->location_id)) {
@@ -279,22 +261,15 @@ class UserProfileController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        
         $user = UserProfileModel::find($id);
 
         if (! $user) {
             return response()->json(['message' => 'User not found'], 404);
         }
 
-        // Validate the incoming deletedby field (optional but recommended)
-        if (! $request->has('deletedby') || empty($request->deletedby)) {
-            return response()->json(['message' => 'deletedby field is required.'], 400);
-        }
-
-        // Perform soft delete
         $user->deletestatus = 1;
         $user->deletedby    = $request->deletedby;
-        $user->deleted_at   = Carbon::now();
+        $user->deleted_at   = Carbon::now(); // or now() helper
         $user->save();
 
         return response()->json(['message' => 'User soft-deleted successfully']);
@@ -358,8 +333,8 @@ class UserProfileController extends Controller
 
         UnavailabilityModel::where('id', $data['unavailabilityId'] ?? null)
             ->update([
-                'unavailStatus'    => $request->action,
-                'statusUpdated_by' => $manager->id,
+                'unavailStatus' => $request->action,
+                'statusUpdated_by'=> $manager->id,
             ]);
 
         $employee = UserProfileModel::find($employeeId);
@@ -379,6 +354,7 @@ class UserProfileController extends Controller
             ]);
         }
 
+        
     }
 
 }
