@@ -9,7 +9,6 @@ use App\Notifications\UnavailabilityResponseNotification;
 use Carbon\Carbon;
 use Http\Discovery\Exception;
 use Illuminate\Http\Request;
-use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB as Enter;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -288,7 +287,7 @@ class UserProfileController extends Controller
         // Fetch notifications where notifiable_id = logged in user ID
         $notifications = Enter::table('notifications')
             ->where('notifiable_id', $user->id)
-            ->select('id', 'notifiable_id', 'data')
+            ->select('id', 'notifiable_id', 'data','read_at')
             ->get();
 
         $sep_data = $notifications->map(function ($notifing) {
@@ -331,30 +330,38 @@ class UserProfileController extends Controller
             ], 400);
         }
 
-        UnavailabilityModel::where('id', $data['data']['unavailabilityId'] ?? null)
+        $updateUnavail = UnavailabilityModel::where('id', $data['data']['unavailabilityId'] ?? null)
             ->update([
-                'unavailStatus' => $request->action,
-                'statusUpdated_by'=> $manager->id,
+                'unavailStatus'    => $request->action,
+                'statusUpdated_by' => $manager->id,
             ]);
 
-        $employee = UserProfileModel::find($employeeId);
-        if (! $employee) {
+        if ($updateUnavail === 0) {
             return response()->json([
-                'message' => 'Employee not found',
-            ], 404);
+                'message' => 'Failed to update unavailability status',
+            ], 500);
         } else {
-            $employee->notify(new UnavailabilityResponseNotification([
-                'status'  => $request->action,
-                'manager' => $manager->firstName . ' ' . $manager->lastName,
-                'message' => "Your leave request has been {$request->action} by {$manager->name}.",
-            ]));
-            return response()->json([
-                'message' => 'Notifications marked as read successfully',
-                'data'    => $data,
-            ]);
+            // Mark the notification as read
+            Enter::table('notifications')->where('id', $request->notification_id)->update(['read_at' => now()]);
+            $employee = UserProfileModel::find($employeeId);
+            if (! $employee) {
+                return response()->json([
+                    'message' => 'Employee not found',
+                ], 404);
+            } else {
+                $employee->notify(new UnavailabilityResponseNotification([
+                    'status'  => $request->action,
+                    'manager' => $manager->firstName . ' ' . $manager->lastName,
+                    'message' => "Your leave request has been {$request->action} by {$manager->name}.",
+                ]));
+                return response()->json([
+                    'message' => 'Notifications marked as read successfully',
+                    'data'    => $data,
+                ]);
+            }
+
         }
 
-        
     }
 
 }
