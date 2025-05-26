@@ -350,8 +350,6 @@ class UserProfileController extends Controller
 
         $employeeId = $data['data']['userId'] ?? null;
 
-        return $employeeId;
-
         if (! $employeeId) {
             return response()->json([
                 'message' => 'Invalid notification data',
