@@ -348,7 +348,9 @@ class UserProfileController extends Controller
 
         $data = json_decode($notification->data, true);
 
-        $employeeId = $data['userId'] ?? null;
+        $employeeId = $data['data']['userId'] ?? null;
+
+        return $employeeId;
 
         if (! $employeeId) {
             return response()->json([
