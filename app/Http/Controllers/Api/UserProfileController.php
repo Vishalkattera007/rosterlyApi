@@ -284,6 +284,22 @@ class UserProfileController extends Controller
             ], 401);
         }
 
+        $fetchNotificationResponse = Enter::table('notifications')
+            ->where('notifiable_id', $user->id)
+            ->whereNull('read_at')->get();
+        if ($fetchNotificationResponse === 0) {
+            return response()->json([
+                'message' => 'No notifications found',
+                'data'    => [],
+            ]);
+        }else{
+            return response()->json([
+                'message' => 'Notifications fetched successfully',
+                'notifications'    => $fetchNotificationResponse,
+            ]);
+        }
+
+
         // Fetch notifications where notifiable_id = logged in user ID
         $notifications = Enter::table('notifications')
             ->where('notifiable_id', $user->id)
