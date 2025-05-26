@@ -353,7 +353,7 @@ class UserProfileController extends Controller
 
         $data = json_decode($notification->data, true);
 
-        $employeeId = $data['data']['userId'] ?? null;
+        $employeeId = $data['userId'] ?? null;
 
         if (! $employeeId) {
             return response()->json([
@@ -361,7 +361,7 @@ class UserProfileController extends Controller
             ], 400);
         }
 
-        $updateUnavail = UnavailabilityModel::where('id', $data['data']['unavailabilityId'] ?? null)
+        $updateUnavail = UnavailabilityModel::where('id', $data['unavailabilityId'] ?? null)
             ->update([
                 'unavailStatus'    => $request->action,
                 'statusUpdated_by' => $manager->id,
@@ -381,6 +381,17 @@ class UserProfileController extends Controller
                 ], 404);
             } else {
                 $action      = strtolower($request->input('action', 'updated'));
+
+                if($action === '1') {
+                    $action = 'approved';
+                } elseif ($action === '2') {
+                    $action = 'denied';
+                } else {
+                    return response()->json([
+                        'message' => 'Invalid action',
+                    ], 400);
+                }
+
                 $managerName = trim("{$manager->firstName} {$manager->lastName}");
                 $employee->notify(new UnavailabilityResponseNotification([
                     'status'  => $action,
