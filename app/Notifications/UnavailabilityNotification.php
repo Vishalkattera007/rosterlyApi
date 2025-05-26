@@ -32,7 +32,7 @@ class UnavailabilityNotification extends Notification
     {
         return [
             'message' => 'Unavailability notification',
-            'data'    => [
+            // 'data'    => [
                 'title'   => $this->unavailability['title'],
                 'message' => $this->unavailability['userName'] . ' has submitted ' .$this->unavailability['title'],
                 'reason' => $this->unavailability['reason'],
@@ -42,7 +42,8 @@ class UnavailabilityNotification extends Notification
                 'userName' => $this->unavailability['userName'],
                 'unavailabilityId' => $this->unavailability['unavailId'],
                 'day'=> $this->unavailability['day'],
-            ],
+                
+            // ],
         ];
     }
 

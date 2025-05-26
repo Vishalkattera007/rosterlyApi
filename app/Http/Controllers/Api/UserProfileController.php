@@ -292,18 +292,32 @@ class UserProfileController extends Controller
                 'message' => 'No notifications found',
                 'data'    => [],
             ]);
-        }else{
+        } else {
+            $formattedNotifications = $fetchNotificationResponse->map(function ($notification) {
+
+                $allnotdata = [
+                    'id'            => $notification->id,
+                    'notifiable_id' => $notification->notifiable_id,
+                    'data'          => json_decode($notification->data, true), // Decode the JSON data
+                    'read_at'       => $notification->read_at,
+                    'created_at'    => $notification->created_at,
+                    'updated_at'    => $notification->updated_at,
+                ];
+                 
+                // $outerData = json_decode($notification->data, true);
+                return $allnotdata; // Extract the nested "data"
+            });
             return response()->json([
-                'message' => 'Notifications fetched successfully',
-                'notifications'    => $fetchNotificationResponse,
+                'message'       => 'Notifications fetched successfully',
+                'notifications' => $formattedNotifications,
+                
             ]);
         }
-
 
         // Fetch notifications where notifiable_id = logged in user ID
         $notifications = Enter::table('notifications')
             ->where('notifiable_id', $user->id)
-            ->select('id', 'notifiable_id', 'data','read_at')
+            ->select('id', 'notifiable_id', 'data', 'read_at')
             ->get();
 
         $sep_data = $notifications->map(function ($notifing) {
@@ -311,7 +325,7 @@ class UserProfileController extends Controller
                 'id'            => $notifing->id,
                 'notifiable_id' => $notifing->notifiable_id,
                 'data'          => json_decode($notifing->data),
-                'read_at'      => $notifing->read_at,
+                'read_at'       => $notifing->read_at,
             ];
         });
         return response()->json([
@@ -339,7 +353,7 @@ class UserProfileController extends Controller
 
         $data = json_decode($notification->data, true);
 
-        $employeeId = $data['data']['userId'] ?? null;
+        $employeeId = $data['userId'] ?? null;
 
         if (! $employeeId) {
             return response()->json([
@@ -347,7 +361,7 @@ class UserProfileController extends Controller
             ], 400);
         }
 
-        $updateUnavail = UnavailabilityModel::where('id', $data['data']['unavailabilityId'] ?? null)
+        $updateUnavail = UnavailabilityModel::where('id', $data['unavailabilityId'] ?? null)
             ->update([
                 'unavailStatus'    => $request->action,
                 'statusUpdated_by' => $manager->id,
@@ -366,10 +380,23 @@ class UserProfileController extends Controller
                     'message' => 'Employee not found',
                 ], 404);
             } else {
+                $action      = strtolower($request->input('action', 'updated'));
+
+                if($action === '1') {
+                    $actionWords = 'approved';
+                } elseif ($action === '2') {
+                    $actionWords = 'denied';
+                } else {
+                    return response()->json([
+                        'message' => 'Invalid action',
+                    ], 400);
+                }
+
+                $managerName = trim("{$manager->firstName} {$manager->lastName}");
                 $employee->notify(new UnavailabilityResponseNotification([
-                    'status'  => $request->action,
+                    'status'  => $action,
                     'manager' => $manager->firstName . ' ' . $manager->lastName,
-                    'message' => "Your leave request has been {$request->action} by {$manager->name}.",
+                    'message' => "Your leave request has been {$actionWords} by {$managerName}.",
                 ]));
                 return response()->json([
                     'message' => 'Notifications marked as read successfully',
