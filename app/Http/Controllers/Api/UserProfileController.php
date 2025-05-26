@@ -292,18 +292,32 @@ class UserProfileController extends Controller
                 'message' => 'No notifications found',
                 'data'    => [],
             ]);
-        }else{
+        } else {
+            $formattedNotifications = $fetchNotificationResponse->map(function ($notification) {
+
+                $allnotdata = [
+                    'id'            => $notification->id,
+                    'notifiable_id' => $notification->notifiable_id,
+                    'data'          => json_decode($notification->data, true), // Decode the JSON data
+                    'read_at'       => $notification->read_at,
+                    'created_at'    => $notification->created_at,
+                    'updated_at'    => $notification->updated_at,
+                ];
+                 
+                // $outerData = json_decode($notification->data, true);
+                return $allnotdata; // Extract the nested "data"
+            });
             return response()->json([
-                'message' => 'Notifications fetched successfully',
-                'notifications'    => $fetchNotificationResponse,
+                'message'       => 'Notifications fetched successfully',
+                'notifications' => $formattedNotifications,
+                
             ]);
         }
-
 
         // Fetch notifications where notifiable_id = logged in user ID
         $notifications = Enter::table('notifications')
             ->where('notifiable_id', $user->id)
-            ->select('id', 'notifiable_id', 'data','read_at')
+            ->select('id', 'notifiable_id', 'data', 'read_at')
             ->get();
 
         $sep_data = $notifications->map(function ($notifing) {
@@ -311,7 +325,7 @@ class UserProfileController extends Controller
                 'id'            => $notifing->id,
                 'notifiable_id' => $notifing->notifiable_id,
                 'data'          => json_decode($notifing->data),
-                'read_at'      => $notifing->read_at,
+                'read_at'       => $notifing->read_at,
             ];
         });
         return response()->json([
@@ -366,7 +380,7 @@ class UserProfileController extends Controller
                     'message' => 'Employee not found',
                 ], 404);
             } else {
-                $action = strtolower($request->input('action', 'updated'));
+                $action      = strtolower($request->input('action', 'updated'));
                 $managerName = trim("{$manager->firstName} {$manager->lastName}");
                 $employee->notify(new UnavailabilityResponseNotification([
                     'status'  => $action,
