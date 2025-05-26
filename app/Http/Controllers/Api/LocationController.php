@@ -191,31 +191,43 @@ class LocationController extends Controller
 
     public function assignLocationToEmployees(Request $request)
 {
-    $locationId = $request->location_id;
-    $duplicateUsers = [];
-    $assignedUsers = [];
+    try {
+        $locationId = $request->location_id;
+        $duplicateUsers = [];
+        $assignedUsers = [];
 
-    foreach ($request->employee_ids as $employeeId) {
-        $user = UserProfileModel::find($employeeId);
-        $existingLocations = $user->location_ids;
+        foreach ($request->employee_ids as $employeeId) {
+            $user = UserProfileModel::find($employeeId);
 
-        if (in_array($locationId, $existingLocations)) {
-            $duplicateUsers[] = $user->firstName . ' ' . $user->lastName;
-            continue;
+            if (!$user) {
+                continue; // Optionally collect missing users
+            }
+
+            $existingLocations = $user->location_ids;
+
+            if (in_array($locationId, $existingLocations)) {
+                $duplicateUsers[] = $user->firstName . ' ' . $user->lastName;
+                continue;
+            }
+
+            $user->addLocations([$locationId]);
+            $assignedUsers[] = $user->id;
         }
 
-        $user->addLocations([$locationId]);
-        $assignedUsers[] = $user->id;
+        return response()->json([
+            'status' => true,
+            'message' => count($duplicateUsers)
+                ? 'Some users were already assigned to this location.'
+                : 'All users assigned successfully.',
+            'already_assigned' => $duplicateUsers,
+            'newly_assigned_ids' => $assignedUsers,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'An error occurred while assigning employees.',
+            'error' => $e->getMessage(), // For debugging, remove in production
+        ], 500);
     }
-
-    return response()->json([
-        'status' => true,
-        'message' => count($duplicateUsers)
-            ? 'Some users were already assigned to this location.'
-            : 'All users assigned successfully.',
-        'already_assigned' => $duplicateUsers,
-        'newly_assigned_ids' => $assignedUsers,
-    ]);
 }
-
 }
