@@ -20,6 +20,7 @@ class UserProfileModel extends Authenticatable
         'mobileNumber',
         'location_id', // f- locations
         'payrate',
+        'payratePercent',
         'profileImage',
         'created_by',
         'created_at',
