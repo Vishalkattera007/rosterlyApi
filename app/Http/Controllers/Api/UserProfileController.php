@@ -331,7 +331,7 @@ class UserProfileController extends Controller
             ], 400);
         }
 
-        UnavailabilityModel::where('id', $data['unavailabilityId'] ?? null)
+        UnavailabilityModel::where('id', $data['data']['unavailabilityId'] ?? null)
             ->update([
                 'unavailStatus' => $request->action,
                 'statusUpdated_by'=> $manager->id,
