@@ -383,9 +383,9 @@ class UserProfileController extends Controller
                 $action      = strtolower($request->input('action', 'updated'));
 
                 if($action === '1') {
-                    $action = 'approved';
+                    $actionWords = 'approved';
                 } elseif ($action === '2') {
-                    $action = 'denied';
+                    $actionWords = 'denied';
                 } else {
                     return response()->json([
                         'message' => 'Invalid action',
@@ -396,7 +396,7 @@ class UserProfileController extends Controller
                 $employee->notify(new UnavailabilityResponseNotification([
                     'status'  => $action,
                     'manager' => $manager->firstName . ' ' . $manager->lastName,
-                    'message' => "Your leave request has been {$request->action} by {$managerName}.",
+                    'message' => "Your leave request has been {$actionWords} by {$managerName}.",
                 ]));
                 return response()->json([
                     'message' => 'Notifications marked as read successfully',
