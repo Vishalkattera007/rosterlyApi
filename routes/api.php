@@ -33,7 +33,7 @@ Route::middleware('apiauth')->group(function () {
         Route::delete('{id}', [UserProfileController::class, 'destroy']);
         Route::get('/role/{id}', [UserProfileController::class, 'show'])->name('users.show');
         Route::get('/login/{loginId?}', [UserProfileController::class, 'getUsersCreatedBy']);
-        Route::post('user-profile/{id}/status', [UserProfileController::class, 'updateStatus']);
+        Route::post('profile/{id}/status', [UserProfileController::class, 'updateStatus']);
 
     });
 
