@@ -212,16 +212,11 @@ class UnavailabilityController extends Controller
     public function store(Request $request, $id = null)
     {
         try {
-            $request->validate([
-                'unavailStatus' => 'nullable|in:pending,approved,rejected',
-            ]);
             $statusMap = [
                 'pending'  => 0,
                 'approved' => 1,
                 'rejected' => 2,
             ];
-
-            $inputStatus = $request->input('unavailStatus', 'pending');
 
             if ($id != 2) {
                 // One-time unavailability
@@ -250,7 +245,7 @@ class UnavailabilityController extends Controller
                 $unavail->toDT          = Carbon::parse($request->toDT);
                 $unavail->reason        = $request->reason;
                 $unavail->notifyTo      = $request->notifyTo;
-                $unavail->unavailStatus = $statusMap[$inputStatus] ?? 0;
+                $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
 
                 $unavail->save();
 
@@ -297,7 +292,7 @@ class UnavailabilityController extends Controller
                 $unavail->toDT          = $requestToTime;
                 $unavail->reason        = $request->reason;
                 $unavail->notifyTo      = $request->notifyTo;
-                $unavail->unavailStatus = $statusMap[$inputStatus] ?? 0;
+                $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
 
                 $unavail->save();
 
@@ -430,7 +425,7 @@ class UnavailabilityController extends Controller
                 'toDT'      => $request->toDT,
                 'reason'    => $request->reason,
                 'unavailId' => $unavail->id,
-                'day'       => $request->day,
+                'day'   => $request->day,
             ]);
 
             $notifyToUser->notify($notification);
