@@ -223,19 +223,19 @@ class UnavailabilityController extends Controller
                 $requestFromDT = Carbon::parse($request->fromDT)->format('Y-m-d h:i A');
                 $requestToDT   = Carbon::parse($request->toDT)->format('Y-m-d h:i A');
 
-                $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
-                    ->get(['fromDT', 'toDT']);
+            $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
+                ->get(['fromDT', 'toDT']);
 
-                foreach ($unavailDetails as $unavailDetail) {
-                    $existingFromDT = Carbon::parse($unavailDetail->fromDT)->format('Y-m-d h:i A');
-                    $existingToDT   = Carbon::parse($unavailDetail->toDT)->format('Y-m-d h:i A');
+            foreach ($unavailDetails as $unavailDetail) {
+                $existingFromDT = Carbon::parse($unavailDetail->fromDT)->format('Y-m-d h:i A');
+                $existingToDT   = Carbon::parse($unavailDetail->toDT)->format('Y-m-d h:i A');
 
-                    if ($requestFromDT === $existingFromDT && $requestToDT === $existingToDT) {
-                        return response()->json([
-                            'message' => 'Unavailability already exists for the selected date & time range',
-                        ], 400);
-                    }
+                if ($requestFromDT === $existingFromDT && $requestToDT === $existingToDT) {
+                    return response()->json([
+                        'message' => 'Unavailability already exists for the selected date & time range',
+                    ], 400);
                 }
+            }
 
                 $unavail                = new UnavailabilityModel();
                 $unavail->userId        = $request->userId;
@@ -247,42 +247,36 @@ class UnavailabilityController extends Controller
                 $unavail->notifyTo      = $request->notifyTo;
                 $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
 
-                $unavail->save();
+            $unavail->save();
 
-                $this->sendNotification($request, $unavail, 'Unavailability Notification');
+            $this->sendNotification($request, $unavail, 'Unavailability Notification');
 
-                return response()->json([
-                    'message' => 'Unavailability saved successfully',
-                    'data'    => $unavail,
-                ]);
+            return response()->json([
+                'message' => 'Unavailability saved successfully',
+                'data'    => $unavail,
+            ]);
+        } else {
+            // Recurring unavailability
+            $requestFromTime = $request->fromDT ? Carbon::parse($request->fromDT)->format('h:i A') : null;
+            $requestToTime   = $request->toDT   ? Carbon::parse($request->toDT)->format('h:i A') : null;
 
-            } else {
+            $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
+                ->where('day', $request->day)
+                ->get(['day', 'fromDT', 'toDT']);
 
-                if ($request->fromDT == null || $request->toDT == null) {
-                    $requestFromTime = null;
-                    $requestToTime   = null;
-                } else {
-                    $requestFromTime = Carbon::parse($request->fromDT)->format('h:i A');
-                    $requestToTime   = Carbon::parse($request->toDT)->format('h:i A');
+            foreach ($unavailDetails as $unavailDetail) {
+                $existingFromTime = Carbon::parse($unavailDetail->fromDT)->format('h:i A');
+                $existingToTime   = Carbon::parse($unavailDetail->toDT)->format('h:i A');
+
+                if (
+                    ($requestFromTime < $existingToTime) &&
+                    ($requestToTime > $existingFromTime)
+                ) {
+                    return response()->json([
+                        'message' => 'Recurring unavailability already exists for the selected time range on the same day.',
+                    ], 400);
                 }
-
-                $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
-                    ->where('day', $request->day)
-                    ->get(['day', 'fromDT', 'toDT']);
-
-                foreach ($unavailDetails as $unavailDetail) {
-                    $existingFromTime = Carbon::parse($unavailDetail->fromDT)->format('h:i A');
-                    $existingToTime   = Carbon::parse($unavailDetail->toDT)->format('h:i A');
-
-                    if (
-                        ($requestFromTime < $existingToTime) &&
-                        ($requestToTime > $existingFromTime)
-                    ) {
-                        return response()->json([
-                            'message' => 'Recurring unavailability already exists for the selected time range on the same day.',
-                        ], 400);
-                    }
-                }
+            }
 
                 $unavail                = new UnavailabilityModel();
                 $unavail->userId        = $request->userId;
@@ -294,23 +288,24 @@ class UnavailabilityController extends Controller
                 $unavail->notifyTo      = $request->notifyTo;
                 $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
 
-                $unavail->save();
+            $unavail->save();
 
-                $this->sendNotification($request, $unavail, 'Recurring Notification');
+            $this->sendNotification($request, $unavail, 'Recurring Notification');
 
-                return response()->json([
-                    'message' => 'Recurring unavailability saved successfully',
-                    'data'    => $unavail,
-                ]);
-            }
-
-        } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to store unavailability',
-                'error'   => $e->getMessage(),
-            ], 500);
+                'message' => 'Recurring unavailability saved successfully',
+                'data'    => $unavail,
+            ]);
         }
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Failed to store unavailability',
+            'error'   => $e->getMessage(),
+        ], 500);
     }
+}
+
 
     /**
      * Display the specified resource.
