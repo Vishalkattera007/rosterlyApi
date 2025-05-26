@@ -210,25 +210,18 @@ class UnavailabilityController extends Controller
     // }
 
     public function store(Request $request, $id = null)
-{
-    try {
-        $statusMap = [
-            'pending'  => 0,
-            'approved' => 1,
-            'rejected' => 2,
-            0 => 0,
-            1 => 1,
-            2 => 2,
-        ];
+    {
+        try {
+            $request->validate([
+                'unavailStatus' => 'nullable|in:pending,approved,rejected',
+            ]);
+            $statusMap = [
+                'pending'  => 0,
+                'approved' => 1,
+                'rejected' => 2,
+            ];
 
-        // Validate status
-        $statusValue = $statusMap[$request->unavailStatus] ?? null;
-
-        if ($statusValue === null) {
-            return response()->json([
-                'message' => 'Invalid unavailStatus. Allowed values: pending, approved, rejected, 0, 1, 2.'
-            ], 400);
-        }
+            $inputStatus = $request->input('unavailStatus', 'pending');
 
         if ($id != 2) {
             // One-time unavailability
@@ -249,15 +242,15 @@ class UnavailabilityController extends Controller
                 }
             }
 
-            $unavail = new UnavailabilityModel();
-            $unavail->userId        = $request->userId;
-            $unavail->unavailType   = $id;
-            $unavail->day           = null;
-            $unavail->fromDT        = Carbon::parse($request->fromDT);
-            $unavail->toDT          = Carbon::parse($request->toDT);
-            $unavail->reason        = $request->reason;
-            $unavail->notifyTo      = $request->notifyTo;
-            $unavail->unavailStatus = $statusValue;
+                $unavail                = new UnavailabilityModel();
+                $unavail->userId        = $request->userId;
+                $unavail->unavailType   = $id;
+                $unavail->day           = null;
+                $unavail->fromDT        = Carbon::parse($request->fromDT);
+                $unavail->toDT          = Carbon::parse($request->toDT);
+                $unavail->reason        = $request->reason;
+                $unavail->notifyTo      = $request->notifyTo;
+                $unavail->unavailStatus = $statusMap[$inputStatus] ?? 0;
 
             $unavail->save();
 
@@ -290,15 +283,15 @@ class UnavailabilityController extends Controller
                 }
             }
 
-            $unavail = new UnavailabilityModel();
-            $unavail->userId        = $request->userId;
-            $unavail->unavailType   = $id;
-            $unavail->day           = $request->day;
-            $unavail->fromDT        = $requestFromTime;
-            $unavail->toDT          = $requestToTime;
-            $unavail->reason        = $request->reason;
-            $unavail->notifyTo      = $request->notifyTo;
-            $unavail->unavailStatus = $statusValue;
+                $unavail                = new UnavailabilityModel();
+                $unavail->userId        = $request->userId;
+                $unavail->unavailType   = $id;
+                $unavail->day           = $request->day;
+                $unavail->fromDT        = $requestFromTime;
+                $unavail->toDT          = $requestToTime;
+                $unavail->reason        = $request->reason;
+                $unavail->notifyTo      = $request->notifyTo;
+                $unavail->unavailStatus = $statusMap[$inputStatus] ?? 0;
 
             $unavail->save();
 
@@ -432,7 +425,7 @@ class UnavailabilityController extends Controller
                 'toDT'      => $request->toDT,
                 'reason'    => $request->reason,
                 'unavailId' => $unavail->id,
-                'day'   => $request->day,
+                'day'       => $request->day,
             ]);
 
             $notifyToUser->notify($notification);
