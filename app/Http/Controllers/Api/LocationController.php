@@ -217,8 +217,8 @@ class LocationController extends Controller
         return response()->json([
             'status' => true,
             'message' => count($duplicateUsers)
-                ? 'Some users were already assigned to this location.'
-                : 'All users assigned successfully.',
+                ? 'Some Employee were already assigned to this location.'
+                : 'All Employee assigned successfully.',
             'already_assigned' => $duplicateUsers,
             'newly_assigned_ids' => $assignedUsers,
         ]);
