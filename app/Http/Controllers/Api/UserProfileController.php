@@ -418,7 +418,7 @@ class UserProfileController extends Controller
                     'message' => "Your leave request has been {$actionWords} by {$managerName}.",
                 ]));
                 return response()->json([
-                    'message' => 'Notifications marked as read successfully',
+                    'message' => "Notifications {$actionWords} successfully",
                     'data'    => $data,
                 ]);
             }
