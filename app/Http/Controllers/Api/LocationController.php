@@ -231,5 +231,31 @@ class LocationController extends Controller
     }
 }
 
+public function getEmployeesByLocation($location_id)
+{
+    try {
+        $locationId = (string) $location_id;
+
+        $employees = UserProfileModel::where(function ($query) use ($locationId) {
+            $query->where('location_id', $locationId)
+                ->orWhere('location_id', 'LIKE', $locationId . ',%')
+                ->orWhere('location_id', 'LIKE', '%,' . $locationId . ',%')
+                ->orWhere('location_id', 'LIKE', '%,' . $locationId);
+        })->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Employees fetched successfully.',
+            'employees' => $employees,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Error fetching employees.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
 
 }
