@@ -372,11 +372,7 @@ class UserProfileController extends Controller
 
         $data       = json_decode($notification->data, true);
         $employeeId = $data['userId'] ?? null;
-        $fromDt     = $data['fromDT'] ?? null;
-        $toDt       = $data['toDT'] ?? null;
-        $reason     = $data['reason'] ?? null;
-        $day        = $data['day'] ?? null;
-        $dayMess    = $day ? "for {$day}" : "from {$fromDt} to {$toDt}";
+
         // you
 
         // return response()->json([
@@ -422,6 +418,11 @@ class UserProfileController extends Controller
                 ], 404);
             } else {
                 $action          = strtolower($request->input('action', 'updated'));
+                $fromDt          = $data['fromDT'] ?? null;
+                $toDt            = $data['toDT'] ?? null;
+                $reason          = $data['reason'] ?? null;
+                $day             = $data['day'] ?? null;
+                $dayMess         = $day ? "for {$day}" : "from {$fromDt} to {$toDt}";
                 $responseMessage = "Your {$reason} request {$dayMess} has been {$action} by {$manager->firstName}
                 {$manager->lastName}";
                 // your request for fever for all day has been approved by John Doe
