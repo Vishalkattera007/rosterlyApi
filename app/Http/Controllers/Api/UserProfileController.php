@@ -370,9 +370,31 @@ class UserProfileController extends Controller
             ], 404);
         }
 
-        $data = json_decode($notification->data, true);
-
+        $data       = json_decode($notification->data, true);
         $employeeId = $data['userId'] ?? null;
+        $fromDt     = $data['fromDT'] ?? null;
+        $toDt       = $data['toDT'] ?? null;
+        $reason     = $data['reason'] ?? null;
+        $day        = $data['day'] ?? null;
+        $dayMess    = $day ? "for {$day}" : "from {$fromDt} to {$toDt}";
+        // you
+
+        // return response()->json([
+        //     'message' => 'This endpoint is not implemented yet',
+        //     'data'    => [
+        //         'employeeId' => $employeeId,
+        //         'fromDt'     => $fromDt,
+        //         'toDt'       => $toDt,
+        //         'reason'     => $reason,
+        //         'day'        => $day,
+        //         'id' =>$data['unavailabilityId'] ?? null,
+        //         'title'      => $data['title'] ?? null,
+        //         'manager' => $manager->firstName . ' ' . $manager->id,
+        //     ],
+        // ]);
+        // $day = $data['day'] ?? null;
+        // $title = $data['title'] ?? null;
+        // "your {$reason} request from {$fromDt} to {$toDt} has been {$actionWords} by {$managerName}"
 
         if (! $employeeId) {
             return response()->json([
@@ -399,7 +421,11 @@ class UserProfileController extends Controller
                     'message' => 'Employee not found',
                 ], 404);
             } else {
-                $action = strtolower($request->input('action', 'updated'));
+                $action          = strtolower($request->input('action', 'updated'));
+                $responseMessage = "Your {$reason} request {$dayMess} has been {$action} by {$manager->firstName}
+                {$manager->lastName}";
+                // your request for fever for all day has been approved by John Doe
+                // your request for fever from 2023-10-01 to 2023-10-05 has been approved by John Doe
 
                 if ($action === '1') {
                     $actionWords = 'approved';
@@ -415,7 +441,7 @@ class UserProfileController extends Controller
                 $employee->notify(new UnavailabilityResponseNotification([
                     'status'  => $action,
                     'manager' => $manager->firstName . ' ' . $manager->lastName,
-                    'message' => "Your leave request has been {$actionWords} by {$managerName}.",
+                    'message' => $responseMessage,
                 ]));
                 return response()->json([
                     'message' => "Notifications {$actionWords} successfully",
