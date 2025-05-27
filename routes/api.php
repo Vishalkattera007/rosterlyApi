@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ChangePasswordController;
+use App\Http\Controllers\Api\DownloadRosterPdf;
 use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\LocationSalesController;
@@ -61,4 +62,7 @@ Route::middleware('apiauth')->group(function () {
         Route::get('/employeesByLocation/{location_id}', [LocationController::class, 'getEmployeesByLocation']);
 
     });
+
+    Route::post('/generatepdf', [DownloadRosterPdf::class, 'downloadRosterPDF']);
+
 });
