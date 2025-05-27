@@ -61,6 +61,15 @@ class UserProfileController extends Controller
     public function store(Request $request)
     {
         try {
+
+            $validatePayratePercent = $request->payratePercent ?? 0;
+            if ($validatePayratePercent < 0 || $validatePayratePercent > 100) {
+                return response()->json([
+                    'message' => "Pay rate percent must be between 0 and 100",
+                    'status'  => false,
+                ], 400);
+            }
+
             // Check if user already exists
             $existingUser = UserProfileModel::where('email', $request->email)->first();
             if ($existingUser) {
@@ -81,17 +90,18 @@ class UserProfileController extends Controller
 
             // Create user
             $userCreate = UserProfileModel::create([
-                'role_id'      => $request->role_id,
-                'firstName'    => $request->firstName,
-                'lastName'     => $request->lastName,
-                'email'        => $request->email,
-                'password'     => Hash::make($generatedPassword),
-                'dob'          => $request->dob,
-                'mobileNumber' => $request->mobileNumber,
-                'payrate'      => $request->payrate,
-                'profileImage' => $profileImagePath,
-                'created_by'   => $request->created_by,
-                'created_at'   => now(),
+                'role_id'        => $request->role_id,
+                'firstName'      => $request->firstName,
+                'lastName'       => $request->lastName,
+                'email'          => $request->email,
+                'password'       => Hash::make($generatedPassword),
+                'dob'            => $request->dob,
+                'mobileNumber'   => $request->mobileNumber,
+                'payrate'        => $request->payrate,
+                'payratePercent' => $validatePayratePercent,
+                'profileImage'   => $profileImagePath,
+                'created_by'     => $request->created_by,
+                'created_at'     => now(),
             ]);
 
             // Send generated password to user via email
@@ -303,14 +313,14 @@ class UserProfileController extends Controller
                     'created_at'    => $notification->created_at,
                     'updated_at'    => $notification->updated_at,
                 ];
-                 
-                // $outerData = json_decode($notification->data, true);
+
+                                    // $outerData = json_decode($notification->data, true);
                 return $allnotdata; // Extract the nested "data"
             });
             return response()->json([
                 'message'       => 'Notifications fetched successfully',
                 'notifications' => $formattedNotifications,
-                
+
             ]);
         }
 
@@ -380,9 +390,9 @@ class UserProfileController extends Controller
                     'message' => 'Employee not found',
                 ], 404);
             } else {
-                $action      = strtolower($request->input('action', 'updated'));
+                $action = strtolower($request->input('action', 'updated'));
 
-                if($action === '1') {
+                if ($action === '1') {
                     $actionWords = 'approved';
                 } elseif ($action === '2') {
                     $actionWords = 'denied';
