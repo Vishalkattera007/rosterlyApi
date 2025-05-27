@@ -417,14 +417,13 @@ class UserProfileController extends Controller
                     'message' => 'Employee not found',
                 ], 404);
             } else {
-                $action          = strtolower($request->input('action', 'updated'));
-                $fromDt          = $data['fromDT'] ?? null;
-                $toDt            = $data['toDT'] ?? null;
-                $reason          = $data['reason'] ?? null;
-                $day             = $data['day'] ?? null;
-                $dayMess         = $day ? "for {$day}" : "from {$fromDt} to {$toDt}";
-                $responseMessage = "Your {$reason} request {$dayMess} has been {$action} by {$manager->firstName}
-                {$manager->lastName}";
+                $action  = strtolower($request->input('action', 'updated'));
+                $fromDt  = $data['fromDT'] ?? null;
+                $toDt    = $data['toDT'] ?? null;
+                $reason  = $data['reason'] ?? null;
+                $day     = $data['day'] ?? null;
+                $dayMess = $day ? "for {$day}" : "from {$fromDt} to {$toDt}";
+
                 // your request for fever for all day has been approved by John Doe
                 // your request for fever from 2023-10-01 to 2023-10-05 has been approved by John Doe
 
@@ -437,8 +436,9 @@ class UserProfileController extends Controller
                         'message' => 'Invalid action',
                     ], 400);
                 }
-
+                
                 $managerName = trim("{$manager->firstName} {$manager->lastName}");
+                $responseMessage = "Your {$reason} request {$dayMess} has been {$actionWords} by {$managerName}";
                 $employee->notify(new UnavailabilityResponseNotification([
                     'status'  => $action,
                     'manager' => $manager->firstName . ' ' . $manager->lastName,
