@@ -149,6 +149,14 @@ class UserProfileController extends Controller
         try {
             $user = UserProfileModel::findOrFail($id);
 
+            $validatePayratePercent = $request->payratePercent ?? 0;
+            if ($validatePayratePercent < 0 || $validatePayratePercent > 100) {
+                return response()->json([
+                    'message' => "Pay rate percent must be between 0 and 100",
+                    'status'  => false,
+                ], 400);
+            }
+
             // If only "status" is in the request, do minimal update
             if ($request->only(['status']) && count($request->all()) === 1) {
                 $user->update([
@@ -180,19 +188,20 @@ class UserProfileController extends Controller
 
             // Full update
             $user->update([
-                'role_id'      => $request->input('role_id', $user->role_id),
-                'firstName'    => $request->input('firstName', $user->firstName),
-                'lastName'     => $request->input('lastName', $user->lastName),
-                'email'        => $request->input('email', $user->email),
-                'password'     => $password,
-                'dob'          => $request->input('dob', $user->dob),
-                'mobileNumber' => $request->input('mobileNumber', $user->mobileNumber),
-                'location_id'  => $request->input('location_id', $user->location_id),
-                'status'       => $request->input('status', $user->status),
-                'payrate'      => $request->input('payrate', $user->payrate),
-                'profileImage' => $path,
-                'updated_by'   => $request->input('updated_by', $user->updated_by),
-                'updated_at'   => now(),
+                'role_id'        => $request->input('role_id', $user->role_id),
+                'firstName'      => $request->input('firstName', $user->firstName),
+                'lastName'       => $request->input('lastName', $user->lastName),
+                'email'          => $request->input('email', $user->email),
+                'password'       => $password,
+                'dob'            => $request->input('dob', $user->dob),
+                'mobileNumber'   => $request->input('mobileNumber', $user->mobileNumber),
+                'location_id'    => $request->input('location_id', $user->location_id),
+                'status'         => $request->input('status', $user->status),
+                'payrate'        => $request->input('payrate', $user->payrate),
+                'payratePercent' => $request->input('payratePercent', $validatePayratePercent),
+                'profileImage'   => $path,
+                'updated_by'     => $request->input('updated_by', $user->updated_by),
+                'updated_at'     => now(),
             ]);
 
             return response()->json([
@@ -361,8 +370,7 @@ class UserProfileController extends Controller
             ], 404);
         }
 
-        $data = json_decode($notification->data, true);
-
+        $data       = json_decode($notification->data, true);
         $employeeId = $data['userId'] ?? null;
 
         if (! $employeeId) {
@@ -390,7 +398,15 @@ class UserProfileController extends Controller
                     'message' => 'Employee not found',
                 ], 404);
             } else {
-                $action = strtolower($request->input('action', 'updated'));
+                $action  = strtolower($request->input('action', 'updated'));
+                $fromDt  = $data['fromDT'] ?? null;
+                $toDt    = $data['toDT'] ?? null;
+                $reason  = $data['reason'] ?? null;
+                $day     = $data['day'] ?? null;
+                $dayMess = $day ? "for {$day}" : "from {$fromDt} to {$toDt}";
+
+                // your request for fever for all day has been approved by John Doe
+                // your request for fever from 2023-10-01 to 2023-10-05 has been approved by John Doe
 
                 if ($action === '1') {
                     $actionWords = 'approved';
@@ -401,15 +417,16 @@ class UserProfileController extends Controller
                         'message' => 'Invalid action',
                     ], 400);
                 }
-
+                
                 $managerName = trim("{$manager->firstName} {$manager->lastName}");
+                $responseMessage = "Your {$reason} request {$dayMess} has been {$actionWords} by {$managerName}";
                 $employee->notify(new UnavailabilityResponseNotification([
                     'status'  => $action,
                     'manager' => $manager->firstName . ' ' . $manager->lastName,
-                    'message' => "Your leave request has been {$actionWords} by {$managerName}.",
+                    'message' => $responseMessage,
                 ]));
                 return response()->json([
-                    'message' => 'Notifications marked as read successfully',
+                    'message' => "Notifications {$actionWords} successfully",
                     'data'    => $data,
                 ]);
             }

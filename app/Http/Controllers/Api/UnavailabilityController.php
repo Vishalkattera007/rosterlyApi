@@ -249,7 +249,7 @@ class UnavailabilityController extends Controller
 
             $unavail->save();
 
-            $this->sendNotification($request, $unavail, 'Unavailability Notification');
+            $this->sendNotification($request, $unavail, 'Unavailability requested off on');
 
             return response()->json([
                 'message' => 'Unavailability saved successfully',
@@ -290,7 +290,7 @@ class UnavailabilityController extends Controller
 
             $unavail->save();
 
-            $this->sendNotification($request, $unavail, 'Recurring Notification');
+            $this->sendNotification($request, $unavail, 'Recurring Unavailability requested off on');
 
             return response()->json([
                 'message' => 'Recurring unavailability saved successfully',
