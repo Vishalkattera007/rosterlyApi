@@ -8,7 +8,7 @@ use Laravel\Passport\HasApiTokens;
 class UserProfileModel extends Authenticatable
 {
     //
-    
+
     use HasApiTokens, Notifiable;
     protected $fillable = [
         'role_id', //f - roles
@@ -29,7 +29,7 @@ class UserProfileModel extends Authenticatable
         'status',
         'deletedstaus',
         'deletedBy',
-        'deleted_at'
+        'deleted_at',
     ];
     protected $table  = 'user_profiles';
     protected $hidden = ['password', 'remember_token'];
@@ -49,20 +49,19 @@ class UserProfileModel extends Authenticatable
 
     // Get locations as array
     // Accessor to get location IDs as array
-public function getLocationIdsAttribute()
-{
-    return $this->location_id ? explode(',', $this->location_id) : [];
-}
+    public function getLocationIdsAttribute()
+    {
+        return $this->location_id ? explode(',', $this->location_id) : [];
+    }
 
 // Method to add new locations
-public function addLocations(array $newLocationIds)
-{
-    $existing = $this->location_ids; // uses accessor above
-    $merged = array_unique(array_merge($existing, $newLocationIds));
-    $this->location_id = implode(',', $merged);
-    $this->save();
-}
-
+    public function addLocations(array $newLocationIds)
+    {
+        $existing          = $this->location_ids; // uses accessor above
+        $merged            = array_unique(array_merge($existing, $newLocationIds));
+        $this->location_id = implode(',', $merged);
+        $this->save();
+    }
 
     // Get Location models for assigned location IDs
     public function locations()

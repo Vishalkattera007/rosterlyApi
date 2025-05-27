@@ -373,25 +373,6 @@ class UserProfileController extends Controller
         $data       = json_decode($notification->data, true);
         $employeeId = $data['userId'] ?? null;
 
-        // you
-
-        // return response()->json([
-        //     'message' => 'This endpoint is not implemented yet',
-        //     'data'    => [
-        //         'employeeId' => $employeeId,
-        //         'fromDt'     => $fromDt,
-        //         'toDt'       => $toDt,
-        //         'reason'     => $reason,
-        //         'day'        => $day,
-        //         'id' =>$data['unavailabilityId'] ?? null,
-        //         'title'      => $data['title'] ?? null,
-        //         'manager' => $manager->firstName . ' ' . $manager->id,
-        //     ],
-        // ]);
-        // $day = $data['day'] ?? null;
-        // $title = $data['title'] ?? null;
-        // "your {$reason} request from {$fromDt} to {$toDt} has been {$actionWords} by {$managerName}"
-
         if (! $employeeId) {
             return response()->json([
                 'message' => 'Invalid notification data',
