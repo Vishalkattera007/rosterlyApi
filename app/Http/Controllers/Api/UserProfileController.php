@@ -373,12 +373,6 @@ class UserProfileController extends Controller
         $data = json_decode($notification->data, true);
 
         $employeeId = $data['userId'] ?? null;
-        $fromDt = $data['fromDT'] ?? null;
-        $toDt = $data['toDT'] ?? null;
-        $reason = $data['reason'] ?? null;
-        $day = $data['day'] ?? null;
-        $title = $data['title'] ?? null;
-        // "your {$reason} request from {$fromDt} to {$toDt} has been {$actionWords} by {$managerName}"
 
         if (! $employeeId) {
             return response()->json([
@@ -421,7 +415,7 @@ class UserProfileController extends Controller
                 $employee->notify(new UnavailabilityResponseNotification([
                     'status'  => $action,
                     'manager' => $manager->firstName . ' ' . $manager->lastName,
-                    'message' => "your {$reason} request from {$fromDt} to {$toDt} has been {$actionWords} by {$managerName}",
+                    'message' => "Your leave request has been {$actionWords} by {$managerName}.",
                 ]));
                 return response()->json([
                     'message' => "Notifications {$actionWords} successfully",
