@@ -245,10 +245,10 @@ class UserProfileController extends Controller
             if ($location_id !== null) {
                 $excludedUserIds = LocationUsers::where('location_id', $location_id)
                     ->pluck('user_id')
-                    ->toArray();
+                    ->toArray(); //[15,22]
 
                 $users = UserProfileModel::with('location')
-                    ->whereNotIn('id', $excludedUserIds)
+                    ->whereNotIn('id', $excludedUserIds)->where('created_by', $loginId)
                     ->get();
 
                 if ($users->isEmpty()) {
