@@ -137,12 +137,13 @@ class LocationController extends Controller
     public function getUsersByLocation($locationId, Request $request)
     {
         try {
+            $loggedInUser = $request->user('api');
             $query = LocationUsers::with('user')
-                ->where('location_id', $locationId);
+                ->where('location_id', $locationId)->where('created_by', $loggedInUser->id);
 
-            if ($request->has('created_by') && ! empty($request->created_by)) {
-                $query->where('created_by', $request->created_by);
-            }
+            // if ($request->has('created_by') && ! empty($request->created_by)) {
+            //     $query->where('created_by', $request->created_by);
+            // }
 
             $users = $query->get();
 
