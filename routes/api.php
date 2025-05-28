@@ -33,9 +33,8 @@ Route::middleware('apiauth')->group(function () {
         Route::post('{id}', [UserProfileController::class, 'update']);
         Route::delete('{id}', [UserProfileController::class, 'destroy']);
         Route::get('/role/{id}', [UserProfileController::class, 'show'])->name('users.show');
-        Route::get('/login/{loginId?}', [UserProfileController::class, 'getUsersCreatedBy']);
+        Route::get('/login/{loginId?}/{location_id?}', [UserProfileController::class, 'getUsersCreatedBy']);
         Route::post('/profile/{id}/status', [UserProfileController::class, 'updateStatus']);
-
     });
 
     Route::get('/roles', [RolesController::class, 'index'])->name('roles.index');
@@ -46,7 +45,6 @@ Route::middleware('apiauth')->group(function () {
         Route::get('{id}', [UnavailabilityController::class, 'show']);
         Route::put('{id}', [UnavailabilityController::class, 'update']);
         Route::delete('{id}', [UnavailabilityController::class, 'destroy']);
-
     });
 
     Route::prefix('locations')->group(function () {

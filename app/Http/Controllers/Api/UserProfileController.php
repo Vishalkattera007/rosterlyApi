@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Mail\SendPasswordMail;
+use App\Models\LocationUsers;
 use App\Models\UnavailabilityModel;
 use App\Models\UserProfileModel;
 use App\Notifications\UnavailabilityResponseNotification;
@@ -238,32 +239,58 @@ class UserProfileController extends Controller
         }
     }
 
-    public function getUsersCreatedBy($loginId, Request $request)
+    public function getUsersCreatedBy(Request $request, $loginId = null, $location_id = null)
     {
         try {
-            // Build query: fetch users where created_by = given login ID
-            $query = UserProfileModel::with('location')
-                ->where('created_by', $loginId);
+            if ($location_id !== null) {
+                $excludedUserIds = LocationUsers::where('location_id', $location_id)
+                    ->pluck('user_id')
+                    ->toArray();
 
-            // Optional: if you want to filter by location_id as well
-            if ($request->has('location_id') && ! empty($request->location_id)) {
-                $query->where('location_id', $request->location_id);
-            }
+                $users = UserProfileModel::with('location')
+                    ->whereNotIn('id', $excludedUserIds)
+                    ->get();
 
-            $users = $query->get();
+                if ($users->isEmpty()) {
+                    return response()->json([
+                        'message' => 'No users found outside this location.',
+                        'status'  => false,
+                    ], 404);
+                }
 
-            if ($users->isEmpty()) {
+                $customData = $users->map(function ($user) {
+                    return [
+                        'id'        => $user->id,
+                        'firstName' => $user->firstName,
+                        'lastName'  => $user->lastName,
+                        // Add more fields as needed
+                    ];
+                });
+
                 return response()->json([
-                    'message' => 'No users found for the given creator.',
-                    'status'  => false,
-                ], 404);
-            }
+                    'message' => 'Users fetched successfully.',
+                    'status'  => true,
+                    'data'    => $customData,
+                ]);
+            } else {
+                $query = UserProfileModel::with('location')
+                    ->where('created_by', $loginId);
 
-            return response()->json([
-                'message' => 'Users fetched successfully.',
-                'data'    => $users,
-                'status'  => true,
-            ]);
+                $users = $query->get();
+
+                if ($users->isEmpty()) {
+                    return response()->json([
+                        'message' => 'No users found for the given creator.',
+                        'status'  => false,
+                    ], 404);
+                }
+
+                return response()->json([
+                    'message' => 'Users fetched successfully.',
+                    'data'    => $users,
+                    'status'  => true,
+                ]);
+            }
 
         } catch (\Exception $e) {
             return response()->json([
@@ -417,8 +444,8 @@ class UserProfileController extends Controller
                         'message' => 'Invalid action',
                     ], 400);
                 }
-                
-                $managerName = trim("{$manager->firstName} {$manager->lastName}");
+
+                $managerName     = trim("{$manager->firstName} {$manager->lastName}");
                 $responseMessage = "Your {$reason} request {$dayMess} has been {$actionWords} by {$managerName}";
                 $employee->notify(new UnavailabilityResponseNotification([
                     'status'  => $action,

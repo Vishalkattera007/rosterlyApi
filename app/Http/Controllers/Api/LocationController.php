@@ -153,14 +153,6 @@ class LocationController extends Controller
                     'status'  => false,
                 ], 404);
             }
-            // $customResponse = $users->map(function ($locationUser) {
-            //     return [
-            //         "userId"     => $locationUser->user->id,
-            //         "locationId" => $locationUser->user->location_id,
-            //         "roleId"     => $locationUser->user->role_id,
-            //         "fullName"   => $locationUser->user->firstName . ' ' . $locationUser->user->lastName,
-            //     ];
-            // });
 
             return response()->json([
                 'message' => 'Users found for the given location.',
