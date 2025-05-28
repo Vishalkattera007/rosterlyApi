@@ -196,7 +196,6 @@ class UserProfileController extends Controller
                 'password'       => $password,
                 'dob'            => $request->input('dob', $user->dob),
                 'mobileNumber'   => $request->input('mobileNumber', $user->mobileNumber),
-                'location_id'    => $request->input('location_id', $user->location_id),
                 'status'         => $request->input('status', $user->status),
                 'payrate'        => $request->input('payrate', $user->payrate),
                 'payratePercent' => $request->input('payratePercent', $validatePayratePercent),
