@@ -174,6 +174,7 @@ class RosterController extends Controller
 
             $rWeekStartDate = $request->input('rWeekStartDate');
             $rWeekEndDate   = $request->input('rWeekEndDate');
+            $locationId     = $request->input('location_id');
 
             if (! $rWeekStartDate || ! $rWeekEndDate) {
                 return response()->json([
@@ -183,6 +184,7 @@ class RosterController extends Controller
             }
             $findWeeks = RosterWeekModel::where('week_start_date', $rWeekStartDate)
                 ->where('week_end_date', $rWeekEndDate)
+                ->where('location_id', $locationId)
                 ->first();
             if (! $findWeeks) {
                 return response()->json([
@@ -193,6 +195,7 @@ class RosterController extends Controller
             return response()->json([
                 'status' => true,
                 'weekId' => $findWeeks->id,
+                'isPublished' => $findWeeks->is_published
             ], 200);
 
         } catch (Exception $e) {
