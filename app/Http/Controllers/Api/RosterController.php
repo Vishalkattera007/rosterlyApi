@@ -167,9 +167,40 @@ class RosterController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function getRosterWeekData(Request $request)
     {
-        //
+        try {
+            $authUser = $request->user('api'); // Get the authenticated user
+
+            $rWeekStartDate = $request->input('rWeekStartDate');
+            $rWeekEndDate   = $request->input('rWeekEndDate');
+
+            if (! $rWeekStartDate || ! $rWeekEndDate) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Week start and end dates are required.',
+                ], 400);
+            }
+            $findWeeks = RosterWeekModel::where('week_start_date', $rWeekStartDate)
+                ->where('week_end_date', $rWeekEndDate)
+                ->first();
+            if (! $findWeeks) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Create a roster week first for the given dates.',
+                ], 404);
+            }
+            return response()->json([
+                'status' => true,
+                'weekId' => $findWeeks->id,
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Error occurred while fetching roster week data: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

@@ -18,9 +18,10 @@ Route::put('/locationSales/{id}', [LocationSalesController::class, 'update']);
 
 Route::put('/notifications/{id}', [UserProfileController::class, 'markAsRead']);
 Route::get('rosterfetch', [RosterController::class, 'index']);
-Route::get('rosterfetch/{loginId?}/{location_id?}', [RosterController::class, 'getRosterByLoginId']);
-// Route::post('rosterStore/{loginId}', [RosterController::class, 'store']);
+Route::get('rosterfetch/{location_id?}/{loginId?}', [RosterController::class, 'getRosterByLoginId']);
+Route::post('rosterWeekftch', [RosterController::class, 'getRosterWeekData']);
 Route::post('rosterStore', [RosterController::class, 'store']);
+// Route::put('rosterWeek/{rosterWeekId}', [RosterController::class, 'unPublish']);
 
 
 Route::middleware('apiauth')->group(function () {
