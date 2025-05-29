@@ -9,6 +9,7 @@ class RosterModel extends Model
     protected $table    = 'roster';
     protected $fillable = [
         'user_id',
+        'rosterWeekId',
         'location_id',
         'date',
         'startTime',
