@@ -21,6 +21,7 @@ Route::get('rosterfetch', [RosterController::class, 'index']);
 Route::get('rosterfetch/{location_id?}/{loginId?}', [RosterController::class, 'getRosterByLoginId']);
 Route::post('rosterWeekftch', [RosterController::class, 'getRosterWeekData']);
 Route::post('rosterStore', [RosterController::class, 'store']);
+Route::post('pubUnpub/{weekId}',[RosterController::class, 'pubUnpub'] );
 // Route::put('rosterWeek/{rosterWeekId}', [RosterController::class, 'unPublish']);
 
 

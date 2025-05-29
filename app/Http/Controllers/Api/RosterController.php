@@ -42,97 +42,113 @@ class RosterController extends Controller
             $rWeekStartDate = $request->input('rWeekStartDate');
             $rWeekEndDate   = $request->input('rWeekEndDate');
             $locationId     = $request->input('location_id');
+            $rosterWeekId   = $request->input('rosterWeekId');
 
-            if (! $rWeekStartDate || ! $rWeekEndDate) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'Week start and end dates are required.',
-                ], 400);
-            }
+            $findRosterWeekId = RosterWeekModel::where('id', $rosterWeekId)->first();
 
-            // Check for existing roster week for same dates and location
-            $existingRosterWeek = RosterWeekModel::where('week_start_date', $rWeekStartDate)
-                ->where('week_end_date', $rWeekEndDate)
-                ->where('location_id', $locationId)
-                ->first();
-
-            if ($existingRosterWeek) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'Roster week already exists for the given dates and location.',
-                ], 409);
-            }
-
-            // Insert the new roster week
-            $insertedRosterWeek = RosterWeekModel::create([
-                'week_start_date' => $rWeekStartDate,
-                'week_end_date'   => $rWeekEndDate,
-                'created_by'      => $authUser->id,
-                'location_id'     => $locationId,
-                'is_published'    => 1,
-            ]);
-
-            if (! $insertedRosterWeek) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'Failed to create roster week.',
-                ], 500);
-            }
-
-            $rosterWeekId = $insertedRosterWeek->id;
-
-            $rosters = $request->input('rosters'); // Expecting an array of roster objects
-
-            if (! is_array($rosters) || empty($rosters)) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'No roster data provided.',
-                ], 400);
-            }
-
-            $savedRosters   = [];
-            $skippedRosters = [];
-
-            foreach ($rosters as $roster) {
-                // Check for duplicate roster entry
-                $exists = RosterModel::where('user_id', $roster['user_id'])
-                    ->where('rosterWeekId', $rosterWeekId)
-                    ->where('date', $roster['date'])
-                    ->where('startTime', $roster['startTime'])
-                    ->where('endTime', $roster['endTime'])
-                    ->exists();
-
-                if ($exists) {
-                    $skippedRosters[] = $roster;
-                    continue;
-                }
-
-                $saved = RosterModel::create([
-                    'user_id'      => $roster['user_id'],
-                    'rosterWeekId' => $rosterWeekId,
-                    'location_id'  => $roster['location_id'],
-                    'date'         => $roster['date'],
-                    'startTime'    => $roster['startTime'],
-                    'endTime'      => $roster['endTime'],
-                    'breakTime'    => $roster['breakTime'],
-                    'hrsRate'      => $roster['hrsRate'],
-                    'percentRate'  => $roster['percentRate'],
-                    'totalPay'     => $roster['totalPay'],
-                    'status'       => $roster['status'] ?? 'active',
-                    'description'  => $roster['description'] ?? null,
-                    'created_by'   => $authUser->id,
+            if ($findRosterWeekId) {
+                $findRosterWeekId->update([
+                    'is_published' => 1,
                 ]);
 
-                $savedRosters[] = $saved;
+                return response()->json([
+                    'status'=>true,
+                    'message'=>"Roster Updated Successfully"
+                ],200);
+
+            } else {
+                if (! $rWeekStartDate || ! $rWeekEndDate) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'Week start and end dates are required.',
+                    ], 400);
+                }
+
+                // Check for existing roster week for same dates and location
+                $existingRosterWeek = RosterWeekModel::where('week_start_date', $rWeekStartDate)
+                    ->where('week_end_date', $rWeekEndDate)
+                    ->where('location_id', $locationId)
+                    ->first();
+
+                if ($existingRosterWeek) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'Roster week already exists for the given dates and location.',
+                    ], 409);
+                }
+
+                // Insert the new roster week
+                $insertedRosterWeek = RosterWeekModel::create([
+                    'week_start_date' => $rWeekStartDate,
+                    'week_end_date'   => $rWeekEndDate,
+                    'created_by'      => $authUser->id,
+                    'location_id'     => $locationId,
+                    'is_published'    => 1,
+                ]);
+
+                if (! $insertedRosterWeek) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'Failed to create roster week.',
+                    ], 500);
+                }
+
+                $rosterWeekId = $insertedRosterWeek->id;
+
+                $rosters = $request->input('rosters'); // Expecting an array of roster objects
+
+                if (! is_array($rosters) || empty($rosters)) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'No roster data provided.',
+                    ], 400);
+                }
+
+                $savedRosters   = [];
+                $skippedRosters = [];
+
+                foreach ($rosters as $roster) {
+                    // Check for duplicate roster entry
+                    $exists = RosterModel::where('user_id', $roster['user_id'])
+                        ->where('rosterWeekId', $rosterWeekId)
+                        ->where('date', $roster['date'])
+                        ->where('startTime', $roster['startTime'])
+                        ->where('endTime', $roster['endTime'])
+                        ->exists();
+
+                    if ($exists) {
+                        $skippedRosters[] = $roster;
+                        continue;
+                    }
+
+                    $saved = RosterModel::create([
+                        'user_id'      => $roster['user_id'],
+                        'rosterWeekId' => $rosterWeekId,
+                        'location_id'  => $roster['location_id'],
+                        'date'         => $roster['date'],
+                        'startTime'    => $roster['startTime'],
+                        'endTime'      => $roster['endTime'],
+                        'breakTime'    => $roster['breakTime'],
+                        'hrsRate'      => $roster['hrsRate'],
+                        'percentRate'  => $roster['percentRate'],
+                        'totalPay'     => $roster['totalPay'],
+                        'status'       => $roster['status'] ?? 'active',
+                        'description'  => $roster['description'] ?? null,
+                        'created_by'   => $authUser->id,
+                    ]);
+
+                    $savedRosters[] = $saved;
+                }
+
+                return response()->json([
+                    'status'             => true,
+                    'message'            => 'Roster week and rosters created successfully.',
+                    'roster_week_id'     => $rosterWeekId,
+                    'saved'              => $savedRosters,
+                    'skipped_duplicates' => $skippedRosters,
+                ]);
             }
 
-            return response()->json([
-                'status'             => true,
-                'message'            => 'Roster week and rosters created successfully.',
-                'roster_week_id'     => $rosterWeekId,
-                'saved'              => $savedRosters,
-                'skipped_duplicates' => $skippedRosters,
-            ]);
         } catch (Exception $e) {
             return response()->json([
                 'status'  => false,
@@ -193,9 +209,9 @@ class RosterController extends Controller
                 ], 404);
             }
             return response()->json([
-                'status' => true,
-                'weekId' => $findWeeks->id,
-                'isPublished' => $findWeeks->is_published
+                'status'      => true,
+                'weekId'      => $findWeeks->id,
+                'isPublished' => $findWeeks->is_published,
             ], 200);
 
         } catch (Exception $e) {
@@ -209,8 +225,37 @@ class RosterController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+
+    public function pubUnpub($id = null)
     {
-        //
+        if ($id !== null) {
+            $rosterWeek = RosterWeekModel::find($id);
+
+            if (! $rosterWeek) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Roster week not found.',
+                ], 404);
+            }
+
+            // Toggle the is_published value
+            $rosterWeek->is_published = $rosterWeek->is_published ? 0 : 1;
+            $rosterWeek->save();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Roster week publication status updated.',
+                'data'    => [
+                    'id'           => $rosterWeek->id,
+                    'is_published' => $rosterWeek->is_published,
+                ],
+            ], 200);
+        }
+
+        return response()->json([
+            'status'  => false,
+            'message' => 'ID is required.',
+        ], 400);
+
     }
 }
