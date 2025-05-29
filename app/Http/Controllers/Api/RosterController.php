@@ -103,8 +103,7 @@ class RosterController extends Controller
         if ($location_id && $loginId) {
             // Fetch roster by login ID and location ID
             $roster = RosterModel::where('location_id', $location_id)
-                ->where('user_id', $loginId)
-                ->with(['user', 'location'])
+                ->where('created_by', $loginId)
                 ->get();
 
             return response()->json([
