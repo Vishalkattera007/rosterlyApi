@@ -51,6 +51,7 @@ class RosterController extends Controller
             $rosterWeek = RosterWeekModel::where('week_start_date', $rWeekStartDate)
                 ->where('week_end_date', $rWeekEndDate)
                 ->where('location_id', $locationId)
+                ->where('created_by', $authenticate->id)
                 ->first();
 
             if (! $rosterWeek) {
@@ -141,119 +142,119 @@ class RosterController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        try {
-            $authUser       = $request->user('api'); // Get the authenticated user
-            $rosterWeekID   = $request->input('rosterWeekID');
-            $rWeekStartDate = $request->input('rWeekStartDate');
-            $rWeekEndDate   = $request->input('rWeekEndDate');
+    // public function store(Request $request)
+    // {
+    //     try {
+    //         $authUser       = $request->user('api'); // Get the authenticated user
+    //         $rosterWeekID   = $request->input('rosterWeekID');
+    //         $rWeekStartDate = $request->input('rWeekStartDate');
+    //         $rWeekEndDate   = $request->input('rWeekEndDate');
 
-            $locationId = $request->input('location_id');
+    //         $locationId = $request->input('location_id');
 
-            if (! $rWeekStartDate || ! $rWeekEndDate) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'Week start and end dates are required.',
-                ], 400);
-            }
+    //         if (! $rWeekStartDate || ! $rWeekEndDate) {
+    //             return response()->json([
+    //                 'status'  => false,
+    //                 'message' => 'Week start and end dates are required.',
+    //             ], 400);
+    //         }
 
-            // Check for existing roster week for same dates and location
-            $existingRosterWeek = RosterWeekModel::where('week_start_date', $rWeekStartDate)
-                ->where('week_end_date', $rWeekEndDate)
-                ->where('location_id', $locationId)
-                ->first();
+    //         // Check for existing roster week for same dates and location
+    //         $existingRosterWeek = RosterWeekModel::where('week_start_date', $rWeekStartDate)
+    //             ->where('week_end_date', $rWeekEndDate)
+    //             ->where('location_id', $locationId)
+    //             ->first();
 
-            if ($existingRosterWeek) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'Roster week already exists for the given dates and location.',
-                ], 409);
-            }
+    //         if ($existingRosterWeek) {
+    //             return response()->json([
+    //                 'status'  => false,
+    //                 'message' => 'Roster week already exists for the given dates and location.',
+    //             ], 409);
+    //         }
 
-            // Insert the new roster week
-            $insertedRosterWeek = RosterWeekModel::create([
-                'week_start_date' => $rWeekStartDate,
-                'week_end_date'   => $rWeekEndDate,
-                'created_by'      => $authUser->id,
-                'location_id'     => $locationId,
-                'is_published'    => 1,
-            ]);
+    //         // Insert the new roster week
+    //         $insertedRosterWeek = RosterWeekModel::create([
+    //             'week_start_date' => $rWeekStartDate,
+    //             'week_end_date'   => $rWeekEndDate,
+    //             'created_by'      => $authUser->id,
+    //             'location_id'     => $locationId,
+    //             'is_published'    => 1,
+    //         ]);
 
-            if (! $insertedRosterWeek) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'Failed to create roster week.',
-                ], 500);
-            }
+    //         if (! $insertedRosterWeek) {
+    //             return response()->json([
+    //                 'status'  => false,
+    //                 'message' => 'Failed to create roster week.',
+    //             ], 500);
+    //         }
 
-            $rosterWeekId = $insertedRosterWeek->id;
+    //         $rosterWeekId = $insertedRosterWeek->id;
 
-            $rosters = $request->input('rosters'); // Expecting an array of roster objects
+    //         $rosters = $request->input('rosters'); // Expecting an array of roster objects
 
-            if (! is_array($rosters) || empty($rosters)) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'No roster data provided.',
-                ], 400);
-            }
+    //         if (! is_array($rosters) || empty($rosters)) {
+    //             return response()->json([
+    //                 'status'  => false,
+    //                 'message' => 'No roster data provided.',
+    //             ], 400);
+    //         }
 
-            $savedRosters   = [];
-            $skippedRosters = [];
+    //         $savedRosters   = [];
+    //         $skippedRosters = [];
 
-            foreach ($rosters as $roster) {
-                // Check for duplicate roster entry
-                $exists = RosterModel::where('user_id', $roster['user_id'])
-                    ->where('rosterWeekId', $rosterWeekId)
-                    ->where('date', $roster['date'])
-                    ->where('startTime', $roster['startTime'])
-                    ->where('endTime', $roster['endTime'])
-                    ->exists();
+    //         foreach ($rosters as $roster) {
+    //             // Check for duplicate roster entry
+    //             $exists = RosterModel::where('user_id', $roster['user_id'])
+    //                 ->where('rosterWeekId', $rosterWeekId)
+    //                 ->where('date', $roster['date'])
+    //                 ->where('startTime', $roster['startTime'])
+    //                 ->where('endTime', $roster['endTime'])
+    //                 ->exists();
 
-                if ($exists) {
-                    $skippedRosters[] = $roster;
-                    continue;
-                }
+    //             if ($exists) {
+    //                 $skippedRosters[] = $roster;
+    //                 continue;
+    //             }
 
-                $saved = RosterModel::create([
-                    'user_id'      => $roster['user_id'],
-                    'rosterWeekId' => $rosterWeekId,
-                    'location_id'  => $roster['location_id'],
-                    'date'         => $roster['date'],
-                    'startTime'    => $roster['startTime'],
-                    'endTime'      => $roster['endTime'],
-                    'breakTime'    => $roster['breakTime'],
-                    'hrsRate'      => $roster['hrsRate'],
-                    'percentRate'  => $roster['percentRate'],
-                    'totalPay'     => $roster['totalPay'],
-                    'status'       => $roster['status'] ?? 'active',
-                    'description'  => $roster['description'] ?? null,
-                    'created_by'   => $authUser->id,
-                ]);
+    //             $saved = RosterModel::create([
+    //                 'user_id'      => $roster['user_id'],
+    //                 'rosterWeekId' => $rosterWeekId,
+    //                 'location_id'  => $roster['location_id'],
+    //                 'date'         => $roster['date'],
+    //                 'startTime'    => $roster['startTime'],
+    //                 'endTime'      => $roster['endTime'],
+    //                 'breakTime'    => $roster['breakTime'],
+    //                 'hrsRate'      => $roster['hrsRate'],
+    //                 'percentRate'  => $roster['percentRate'],
+    //                 'totalPay'     => $roster['totalPay'],
+    //                 'status'       => $roster['status'] ?? 'active',
+    //                 'description'  => $roster['description'] ?? null,
+    //                 'created_by'   => $authUser->id,
+    //             ]);
 
-                $savedRosters[] = $saved;
-            }
+    //             $savedRosters[] = $saved;
+    //         }
 
-            return response()->json([
-                'status'             => true,
-                'message'            => 'Roster week and rosters created successfully.',
-                'roster_week_id'     => $rosterWeekId,
-                'saved'              => $savedRosters,
-                'skipped_duplicates' => $skippedRosters,
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Error occurred while creating rosters: ' . $e->getMessage(),
-            ], 500);
-        } catch (Exception $e) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Error occurred while processing rosters: ' . $e->getMessage(),
-            ], 500);
-        }
+    //         return response()->json([
+    //             'status'             => true,
+    //             'message'            => 'Roster week and rosters created successfully.',
+    //             'roster_week_id'     => $rosterWeekId,
+    //             'saved'              => $savedRosters,
+    //             'skipped_duplicates' => $skippedRosters,
+    //         ]);
+    //     } catch (Exception $e) {
+    //         return response()->json([
+    //             'status'  => false,
+    //             'message' => 'Error occurred while creating rosters: ' . $e->getMessage(),
+    //         ], 500);
+    //     } catch (Exception $e) {
+    //         return response()->json([
+    //             'status'  => false,
+    //             'message' => 'Error occurred while processing rosters: ' . $e->getMessage(),
+    //         ], 500);
+    //     }
 
-    }
+    // }
 
     /**
      * Display the specified resource.

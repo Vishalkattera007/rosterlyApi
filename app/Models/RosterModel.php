@@ -34,4 +34,7 @@ class RosterModel extends Model
     {
         return $this->belongsTo(LocationModel::class, 'location_id');
     }
+    public function rosterWeek(){
+        return $this->belongsTo(RosterWeekModel::class, 'rosterWeekId', 'id');
+    }
 }
