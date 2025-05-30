@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Api;
 
 // use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Mail\SendNotificationsMail;
 use App\Models\UnavailabilityModel;
 use App\Models\UserProfileModel;
 use App\Notifications\UnavailabilityNotification;
@@ -10,6 +11,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class UnavailabilityController extends Controller
 {
@@ -223,19 +225,19 @@ class UnavailabilityController extends Controller
                 $requestFromDT = Carbon::parse($request->fromDT)->format('Y-m-d h:i A');
                 $requestToDT   = Carbon::parse($request->toDT)->format('Y-m-d h:i A');
 
-            $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
-                ->get(['fromDT', 'toDT']);
+                $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
+                    ->get(['fromDT', 'toDT']);
 
-            foreach ($unavailDetails as $unavailDetail) {
-                $existingFromDT = Carbon::parse($unavailDetail->fromDT)->format('Y-m-d h:i A');
-                $existingToDT   = Carbon::parse($unavailDetail->toDT)->format('Y-m-d h:i A');
+                foreach ($unavailDetails as $unavailDetail) {
+                    $existingFromDT = Carbon::parse($unavailDetail->fromDT)->format('Y-m-d h:i A');
+                    $existingToDT   = Carbon::parse($unavailDetail->toDT)->format('Y-m-d h:i A');
 
-                if ($requestFromDT === $existingFromDT && $requestToDT === $existingToDT) {
-                    return response()->json([
-                        'message' => 'Unavailability already exists for the selected date & time range',
-                    ], 400);
+                    if ($requestFromDT === $existingFromDT && $requestToDT === $existingToDT) {
+                        return response()->json([
+                            'message' => 'Unavailability already exists for the selected date & time range',
+                        ], 400);
+                    }
                 }
-            }
 
                 $unavail                = new UnavailabilityModel();
                 $unavail->userId        = $request->userId;
@@ -247,36 +249,40 @@ class UnavailabilityController extends Controller
                 $unavail->notifyTo      = $request->notifyTo;
                 $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
 
-            $unavail->save();
+                $unavail->save();
 
-            $this->sendNotification($request, $unavail, 'Unavailability requested off on');
+                $fetchNotifyData = UserProfileModel::where('id', $request->notifyTo)->first();
 
-            return response()->json([
-                'message' => 'Unavailability saved successfully',
-                'data'    => $unavail,
-            ]);
-        } else {
-            // Recurring unavailability
-            $requestFromTime = $request->fromDT ? Carbon::parse($request->fromDT)->format('h:i A') : null;
-            $requestToTime   = $request->toDT   ? Carbon::parse($request->toDT)->format('h:i A') : null;
+                $notifyEmail = $fetchNotifyData->email;
 
-            $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
-                ->where('day', $request->day)
-                ->get(['day', 'fromDT', 'toDT']);
+                $this->sendNotification($request, $unavail, 'Unavailability requested off on', $notifyEmail);
 
-            foreach ($unavailDetails as $unavailDetail) {
-                $existingFromTime = Carbon::parse($unavailDetail->fromDT)->format('h:i A');
-                $existingToTime   = Carbon::parse($unavailDetail->toDT)->format('h:i A');
+                return response()->json([
+                    'message' => 'Unavailability saved successfully',
+                    'data'    => $unavail,
+                ]);
+            } else {
+                // Recurring unavailability
+                $requestFromTime = $request->fromDT ? Carbon::parse($request->fromDT)->format('h:i A') : null;
+                $requestToTime   = $request->toDT ? Carbon::parse($request->toDT)->format('h:i A') : null;
 
-                if (
-                    ($requestFromTime < $existingToTime) &&
-                    ($requestToTime > $existingFromTime)
-                ) {
-                    return response()->json([
-                        'message' => 'Recurring unavailability already exists for the selected time range on the same day.',
-                    ], 400);
+                $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
+                    ->where('day', $request->day)
+                    ->get(['day', 'fromDT', 'toDT']);
+
+                foreach ($unavailDetails as $unavailDetail) {
+                    $existingFromTime = Carbon::parse($unavailDetail->fromDT)->format('h:i A');
+                    $existingToTime   = Carbon::parse($unavailDetail->toDT)->format('h:i A');
+
+                    if (
+                        ($requestFromTime < $existingToTime) &&
+                        ($requestToTime > $existingFromTime)
+                    ) {
+                        return response()->json([
+                            'message' => 'Recurring unavailability already exists for the selected time range on the same day.',
+                        ], 400);
+                    }
                 }
-            }
 
                 $unavail                = new UnavailabilityModel();
                 $unavail->userId        = $request->userId;
@@ -288,24 +294,26 @@ class UnavailabilityController extends Controller
                 $unavail->notifyTo      = $request->notifyTo;
                 $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
 
-            $unavail->save();
+                $unavail->save();
+                $fetchNotifyData = UserProfileModel::where('id', $request->notifyTo)->first();
 
-            $this->sendNotification($request, $unavail, 'Recurring Unavailability requested off on');
+                $notifyEmail = $fetchNotifyData->email;
 
+                $this->sendNotification($request, $unavail, 'Recurring Unavailability requested off on', $notifyEmail);
+
+                return response()->json([
+                    'message' => 'Recurring unavailability saved successfully',
+                    'data'    => $unavail,
+                ]);
+            }
+
+        } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Recurring unavailability saved successfully',
-                'data'    => $unavail,
-            ]);
+                'message' => 'Failed to store unavailability',
+                'error'   => $e->getMessage(),
+            ], 500);
         }
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Failed to store unavailability',
-            'error'   => $e->getMessage(),
-        ], 500);
     }
-}
-
 
     /**
      * Display the specified resource.
@@ -402,7 +410,7 @@ class UnavailabilityController extends Controller
 
     // helper function to send notification
 
-    protected function sendNotification($request, $unavail, $title)
+    protected function sendNotification($request, $unavail, $title, $email)
     {
         $notifyToUser = UserProfileModel::find($request->notifyTo);
         $user         = UserProfileModel::find($request->userId);
@@ -411,8 +419,8 @@ class UnavailabilityController extends Controller
 
         if ($notifyToUser) {
             Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
-
-            $notification = new UnavailabilityNotification([
+            $notificationMessage = $userName . 'has submitted' . $title . ' ' . $request->fromDT . ' ' . $request->toDT;
+            $notification        = new UnavailabilityNotification([
                 'title'     => $title,
                 'userId'    => $request->userId,
                 'userName'  => $userName,
@@ -420,8 +428,10 @@ class UnavailabilityController extends Controller
                 'toDT'      => $request->toDT,
                 'reason'    => $request->reason,
                 'unavailId' => $unavail->id,
-                'day'   => $request->day,
+                'day'       => $request->day,
             ]);
+
+            Mail::to($request->email)->send(new SendNotificationsMail($notificationMessage));
 
             $notifyToUser->notify($notification);
             Log::info("Notification sent to user ID: " . $notifyToUser->id);

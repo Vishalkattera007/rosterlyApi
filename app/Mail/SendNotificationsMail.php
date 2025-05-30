@@ -12,12 +12,15 @@ class SendNotificationsMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public string $notificationMessage;
+
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct(string $notificationMessage)
     {
         //
+        $this->notificationMessage = $notificationMessage;
     }
 
     /**
@@ -26,7 +29,7 @@ class SendNotificationsMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Send Notifications Mail',
+            subject: 'Rosterly Uavailability Notification',
         );
     }
 
@@ -36,7 +39,7 @@ class SendNotificationsMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            view: 'emails.send_notification',
         );
     }
 
