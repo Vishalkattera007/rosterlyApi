@@ -196,6 +196,7 @@ class RosterController extends Controller
                 'status'      => true,
                 'weekId'      => $findWeeks->id,
                 'isPublished' => $findWeeks->is_published,
+                'userId' => $findWeeks->created_by
             ], 200);
 
         } catch (Exception $e) {
