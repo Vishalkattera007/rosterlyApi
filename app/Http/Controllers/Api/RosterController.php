@@ -210,7 +210,7 @@ class RosterController extends Controller
      * Remove the specified resource from storage.
      */
 
-    public function pubUnpub($id = null, $status = null)
+    public function pubUnpub($id = null)
     {
         if ($id !== null) {
             $rosterWeek = RosterWeekModel::find($id);
@@ -221,26 +221,19 @@ class RosterController extends Controller
                     'message' => 'Roster week not found.',
                 ], 404);
             }
-            
-            if($status == 0){
-                // unpublish
-            }elseif($status == 1){
-                // publish
-                // get the current weekid 
-            }
 
-            // // Toggle the is_published value
-            // $rosterWeek->is_published = $rosterWeek->is_published ? 0 : 1;
-            // $rosterWeek->save();
+            // Toggle the is_published value
+            $rosterWeek->is_published = $rosterWeek->is_published ? 0 : 1;
+            $rosterWeek->save();
 
-            // return response()->json([
-            //     'status'  => true,
-            //     'message' => 'Roster week publication status updated.',
-            //     'data'    => [
-            //         'id'           => $rosterWeek->id,
-            //         'is_published' => $rosterWeek->is_published,
-            //     ],
-            // ], 200);
+            return response()->json([
+                'status'  => true,
+                'message' => 'Roster week publication status updated.',
+                'data'    => [
+                    'id'           => $rosterWeek->id,
+                    'is_published' => $rosterWeek->is_published,
+                ],
+            ], 200);
         }
 
         return response()->json([
