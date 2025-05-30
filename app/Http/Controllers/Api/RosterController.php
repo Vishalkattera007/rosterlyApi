@@ -39,16 +39,6 @@ class RosterController extends Controller
         try {
             $authUser         = $request->user('api'); // Get the authenticated user
             $rosterWeekID     = $request->input('rosterWeekID');
-            $checkIsPublished = RosterWeekModel::where('is_published', 0)
-                ->where('id', $rosterWeekID)
-                ->first();
-
-            if (! $checkIsPublished) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'This roster week is already published or not found.',
-                ], 403); // or 404
-            }
             $rWeekStartDate = $request->input('rWeekStartDate');
             $rWeekEndDate   = $request->input('rWeekEndDate');
 
