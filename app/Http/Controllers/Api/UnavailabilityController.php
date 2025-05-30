@@ -431,9 +431,9 @@ class UnavailabilityController extends Controller
                 'day'       => $request->day,
             ]);
 
-            Mail::to($request->email)->send(new SendNotificationsMail($notificationMessage));
-
+            
             $notifyToUser->notify($notification);
+            Mail::to($email)->send(new SendNotificationsMail($notificationMessage));
             Log::info("Notification sent to user ID: " . $notifyToUser->id);
         } else {
             Log::warning('notifyTo user not found. ID: ' . $request->notifyTo);
