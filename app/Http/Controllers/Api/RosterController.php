@@ -215,7 +215,7 @@ class RosterController extends Controller
             $authenticate = $request->user('api');
             $rosterWeek   = RosterWeekModel::where('id', $id)
                 ->where('created_by', $authenticate->id)
-                ->where('location_id', $request->locationId)
+                ->where('location_id', $locationId)
                 ->first();
 
             if (! $rosterWeek) {
