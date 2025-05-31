@@ -96,6 +96,11 @@ class RosterController extends Controller
                             'updated_by'   => $authenticate->id,
                         ]);
                         $updatedRosters[] = $existingShift;
+                        if (count($updatedRosters) > 0) {
+                            $rosterWeek->update([
+                                'is_published' => 1,
+                            ]);
+                        }
                         continue; // ✅ Skip creating new one
                     }
                 }
@@ -138,8 +143,6 @@ class RosterController extends Controller
             ], 500);
         }
     }
-
-   
 
     /**
      * Display the specified resource.
@@ -184,6 +187,7 @@ class RosterController extends Controller
             }
             $findWeeks = RosterWeekModel::where('week_start_date', $rWeekStartDate)
                 ->where('week_end_date', $rWeekEndDate)
+                ->where('created_by', $authUser->id)
                 ->where('location_id', $locationId)
                 ->first();
             if (! $findWeeks) {
@@ -196,7 +200,7 @@ class RosterController extends Controller
                 'status'      => true,
                 'weekId'      => $findWeeks->id,
                 'isPublished' => $findWeeks->is_published,
-                'userId' => $findWeeks->created_by
+                'userId'      => $findWeeks->created_by,
             ], 200);
 
         } catch (Exception $e) {
@@ -211,10 +215,14 @@ class RosterController extends Controller
      * Remove the specified resource from storage.
      */
 
-    public function pubUnpub($id = null)
+    public function pubUnpub(Request $request, $weekId = null, $locationId = null)
     {
-        if ($id !== null) {
-            $rosterWeek = RosterWeekModel::find($id);
+        if ($weekId !== null) {
+            $authenticate = $request->user('api');
+            $rosterWeek   = RosterWeekModel::where('id', $weekId)
+                ->where('created_by', $authenticate->id)
+                ->where('location_id', $locationId)
+                ->first();
 
             if (! $rosterWeek) {
                 return response()->json([
@@ -231,8 +239,9 @@ class RosterController extends Controller
                 'status'  => true,
                 'message' => 'Roster week publication status updated.',
                 'data'    => [
-                    'id'           => $rosterWeek->id,
+                    'id'           => $weekId,
                     'is_published' => $rosterWeek->is_published,
+                    'location_id'  => $locationId,
                 ],
             ], 200);
         }
