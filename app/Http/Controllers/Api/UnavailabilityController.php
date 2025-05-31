@@ -7,6 +7,7 @@ use App\Mail\SendNotificationsMail;
 use App\Models\UnavailabilityModel;
 use App\Models\UserProfileModel;
 use App\Notifications\UnavailabilityNotification;
+use App\Notifications\UnavailabilityResponseNotification;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -373,19 +374,37 @@ class UnavailabilityController extends Controller
 
             $unavail->save();
 
-            return response()->json([
-                'message' => $id == 2
+          // ✅ After saving, notify the manager or whoever is in notifyTo
+        $manager = UserProfileModel::find($request->notifyTo);
+        $employee = UserProfileModel::find($request->userId); // the one who updated
+
+        if ($manager && $employee) {
+            $message = "{$employee->firstName} {$employee->lastName} updated their unavailability request";
+
+            $manager->notify(new UnavailabilityResponseNotification([
+                'userId'          => $employee->id,
+                'unavailabilityId'=> $unavail->id,
+                'fromDT'          => $request->fromDT,
+                'toDT'            => $request->toDT,
+                'reason'          => $request->reason,
+                'day'             => $request->day ?? null,
+                'message'         => $message,
+            ]));
+        }
+
+        return response()->json([
+            'message' => $request->unavailType == 2
                 ? "Recurring unavailability for {$request->day} updated successfully"
                 : "Unavailability updated successfully",
-                'data'    => $unavail,
-            ]);
+            'data'    => $unavail,
+        ]);
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to update unavailability',
-                'error'   => $e->getMessage(),
-            ], 500);
-        }
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Failed to update unavailability',
+            'error'   => $e->getMessage(),
+        ], 500);
+    }
     }
 
     /**
