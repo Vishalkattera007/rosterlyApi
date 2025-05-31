@@ -139,8 +139,6 @@ class RosterController extends Controller
         }
     }
 
-   
-
     /**
      * Display the specified resource.
      */
@@ -196,7 +194,7 @@ class RosterController extends Controller
                 'status'      => true,
                 'weekId'      => $findWeeks->id,
                 'isPublished' => $findWeeks->is_published,
-                'userId' => $findWeeks->created_by
+                'userId'      => $findWeeks->created_by,
             ], 200);
 
         } catch (Exception $e) {
@@ -211,10 +209,13 @@ class RosterController extends Controller
      * Remove the specified resource from storage.
      */
 
-    public function pubUnpub($id = null)
+    public function pubUnpub(Request $request, $id = null)
     {
         if ($id !== null) {
-            $rosterWeek = RosterWeekModel::find($id);
+            $authenticate = $request->user('api');
+            $rosterWeek   = RosterWeekModel::where('id', $id)
+                ->where('created_by', $authenticate->id)
+                ->first();
 
             if (! $rosterWeek) {
                 return response()->json([
