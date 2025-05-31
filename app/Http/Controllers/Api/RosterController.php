@@ -209,12 +209,13 @@ class RosterController extends Controller
      * Remove the specified resource from storage.
      */
 
-    public function pubUnpub(Request $request, $id = null)
+    public function pubUnpub(Request $request, $id = null, $locationId = null)
     {
         if ($id !== null) {
             $authenticate = $request->user('api');
             $rosterWeek   = RosterWeekModel::where('id', $id)
                 ->where('created_by', $authenticate->id)
+                ->where('location_id', $request->locationId)
                 ->first();
 
             if (! $rosterWeek) {
