@@ -96,6 +96,11 @@ class RosterController extends Controller
                             'updated_by'   => $authenticate->id,
                         ]);
                         $updatedRosters[] = $existingShift;
+                        if (count($updatedRosters) > 0) {
+                            $rosterWeek->update([
+                                'is_published' => 1,
+                            ]);
+                        }
                         continue; // ✅ Skip creating new one
                     }
                 }
@@ -236,7 +241,7 @@ class RosterController extends Controller
                 'data'    => [
                     'id'           => $weekId,
                     'is_published' => $rosterWeek->is_published,
-                    'location_id' => $locationId
+                    'location_id'  => $locationId,
                 ],
             ], 200);
         }
