@@ -209,11 +209,11 @@ class RosterController extends Controller
      * Remove the specified resource from storage.
      */
 
-    public function pubUnpub(Request $request, $id = null, $locationId = null)
+    public function pubUnpub(Request $request, $weekId = null, $locationId = null)
     {
-        if ($id !== null) {
+        if ($weekId !== null) {
             $authenticate = $request->user('api');
-            $rosterWeek   = RosterWeekModel::where('id', $id)
+            $rosterWeek   = RosterWeekModel::where('id', $weekId)
                 ->where('created_by', $authenticate->id)
                 ->where('location_id', $locationId)
                 ->first();
@@ -233,8 +233,9 @@ class RosterController extends Controller
                 'status'  => true,
                 'message' => 'Roster week publication status updated.',
                 'data'    => [
-                    'id'           => $rosterWeek->id,
+                    'id'           => $weekId,
                     'is_published' => $rosterWeek->is_published,
+                    'location_id' => $locationId
                 ],
             ], 200);
         }
