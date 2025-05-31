@@ -182,6 +182,7 @@ class RosterController extends Controller
             }
             $findWeeks = RosterWeekModel::where('week_start_date', $rWeekStartDate)
                 ->where('week_end_date', $rWeekEndDate)
+                ->where('created_by', $authUser->id)
                 ->where('location_id', $locationId)
                 ->first();
             if (! $findWeeks) {
