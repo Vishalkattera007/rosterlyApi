@@ -252,4 +252,63 @@ class RosterController extends Controller
         ], 400);
 
     }
+
+    public function delete(Request $request)
+    {
+        $shiftId      = $request->shiftId;
+        $locationId   = $request->locationId;
+        $authenticate = $request->user('api');
+        $rosterWeekId = $request->rosterWeekId;
+        $employeeId   = $request->empId;
+        // THIS IS SINGLE ROSTER SHIFT DELERE
+        $checkforDelete = RosterModel::where('id', $shiftId)
+            ->where('location_id', $locationId)
+            ->where('created_by', $authenticate->id)
+            ->where('rosterWeekId', $rosterWeekId)
+            ->where('user_id', $employeeId)->first();
+
+        if ($checkforDelete) {
+            $checkforDelete->delete();
+
+            return response()->json([
+                'status' => true,
+                'data'   => $checkforDelete,
+            ], 200);
+        }
+
+        return response()->json([
+            'status'  => false,
+            'message' => 'No matching shift found.',
+        ], 404);
+
+    }
+    public function allweekdelete(Request $request)
+    {
+// THIS IS WHOLE ROSTER WITH WEEK DELETE
+
+        $locationId   = $request->locationId;
+        $authenticate = $request->user('api');
+        $rosterWeekId = $request->rosterWeekId;
+        if ($rosterWeekId) {
+            $deletingRosterWeek = RosterWeekModel::where('id', $rosterWeekId)
+                ->where('location_id', $locationId)
+                ->where('created_by', $authenticate->id)
+                ->first();
+
+            if ($deletingRosterWeek) {
+                $deletingRosterWeek->delete();
+                return response()->json([
+                    'status' => true,
+                    'data'   => $deletingRosterWeek,
+                ], 200);
+            }
+
+        }
+
+        return response()->json([
+            'status'  => false,
+            'message' => 'Roster week not found',
+        ], 404);
+
+    }
 }

@@ -20,10 +20,11 @@ Route::put('/notifications/{id}', [UserProfileController::class, 'markAsRead']);
 Route::get('rosterfetch', [RosterController::class, 'index']);
 Route::get('rosterfetch/{location_id?}/{loginId?}', [RosterController::class, 'getRosterByLoginId']);
 Route::post('rosterWeekftch', [RosterController::class, 'getRosterWeekData']);
-// Route::post('rosterStore', [RosterController::class, 'store']);
 Route::POST('porstRoster', [RosterController::class, 'postRoster']);
 Route::post('pubUnpub/{weekId}/{locationId}',[RosterController::class, 'pubUnpub'] );
-// Route::put('rosterWeek/{rosterWeekId}', [RosterController::class, 'unPublish']);
+Route::delete('rosterDelete',[RosterController::class, 'delete']);
+Route::delete('rosterWeekDelete/all',[RosterController::class, 'allweekdelete']);
+
 
 
 Route::middleware('apiauth')->group(function () {
