@@ -273,6 +273,7 @@ class RosterController extends Controller
             return response()->json([
                 'status' => true,
                 'data'   => $checkforDelete,
+                'message'=>"Roster Shift Deleted Successfully"
             ], 200);
         }
 
