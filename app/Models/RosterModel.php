@@ -29,6 +29,9 @@ class RosterModel extends Model
     {
         return $this->belongsTo(UserProfileModel::class, 'user_id');
     }
+    public function unavail(){
+        return $this->belongsTo(UnavailabilityModel::class, 'user_id', 'userId');
+    }
 
     public function location()
     {

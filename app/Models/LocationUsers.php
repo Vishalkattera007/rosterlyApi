@@ -23,4 +23,7 @@ class LocationUsers extends Model
     {
         return $this->belongsTo(UserProfileModel::class, 'user_id', 'id');
     }
+    public function unavail(){
+         return $this->hasMany(UnavailabilityModel::class, 'userId', 'user_id');
+    }
 }

@@ -138,15 +138,13 @@ class LocationController extends Controller
     {
         try {
             $loggedInUser = $request->user('api');
-            $query = LocationUsers::with('user')
-                ->where('location_id', $locationId)->where('created_by', $loggedInUser->id);
-
-            // if ($request->has('created_by') && ! empty($request->created_by)) {
-            //     $query->where('created_by', $request->created_by);
-            // }
+            $query        = LocationUsers::with(['user',
+                'unavail' => function ($q) {
+                    $q->where('unavailStatus', 1);
+                },
+            ])->where('location_id', $locationId)->where('created_by', $loggedInUser->id);
 
             $users = $query->get();
-
 
             if ($users->isEmpty()) {
                 return response()->json([
