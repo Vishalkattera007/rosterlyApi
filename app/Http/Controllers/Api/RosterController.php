@@ -316,7 +316,7 @@ class RosterController extends Controller
     public function dashboardData(Request $request)
 {
     $authenticate = $request->user('api');
-    $loginId = 44;
+    $loginId = $authenticate->id;
 
     $fetchLocations = RosterModel::with('location')
         ->where('user_id', $loginId)
