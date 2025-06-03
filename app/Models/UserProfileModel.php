@@ -69,4 +69,5 @@ class UserProfileModel extends Authenticatable
         $locationIds = $this->getLocationIdsAttribute();
         return LocationModel::whereIn('id', $locationIds)->get();
     }
+    
 }
