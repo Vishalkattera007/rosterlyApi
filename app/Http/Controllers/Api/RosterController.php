@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\RosterModel;
 use App\Models\RosterWeekModel;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 
@@ -271,9 +272,9 @@ class RosterController extends Controller
             $checkforDelete->delete();
 
             return response()->json([
-                'status' => true,
-                'data'   => $checkforDelete,
-                'message'=>"Roster Shift Deleted Successfully"
+                'status'  => true,
+                'data'    => $checkforDelete,
+                'message' => "Roster Shift Deleted Successfully",
             ], 200);
         }
 
@@ -314,47 +315,49 @@ class RosterController extends Controller
     }
 
     public function dashboardData(Request $request)
-{
-    $authenticate = $request->user('api');
-    $loginId = $authenticate->id;
+    {
+        $authenticate = $request->user('api');
+        $loginId      = $authenticate->id;
+        $currentDate  = Carbon::now()->toDateString();
 
-    $fetchLocations = RosterModel::with('location')
-        ->where('user_id', $loginId)
-        ->get();
+        $fetchLocations = RosterModel::with('location')
+            ->where('user_id', $loginId)
+            ->where('date',$currentDate)
+            ->get();
 
-    if ($fetchLocations->isEmpty()) {
-        return response()->json([
-            "status" => 200,
-            "user_id" => $loginId,
-            "shiftdata" => []
-        ], 200);
-    }
-
-    $grouped = [];
-
-    foreach ($fetchLocations as $shift) {
-        $locationId = $shift->location->id;
-
-        // If the location is not already added
-        if (!isset($grouped[$locationId])) {
-            $grouped[$locationId] = $shift->location->toArray();
-            $grouped[$locationId]['locationwiseshift'] = [];
+        if ($fetchLocations->isEmpty()) {
+            return response()->json([
+                "status"    => 200,
+                "user_id"   => $loginId,
+                "shiftdata" => [],
+            ], 200);
         }
 
-        $shiftData = $shift->toArray();
-        unset($shiftData['user_id'], $shiftData['location_id'], $shiftData['location']);
-        $grouped[$locationId]['locationwiseshift'][] = $shiftData;
-    }
+        $grouped = [];
 
-    return response()->json([
-        "status" => 200,
-        "user_id" => $loginId,
-        "shiftdata" => [
-            [
-                "locationwise" => array_values($grouped)
-            ]
-        ]
-    ], 200);
-}
+        foreach ($fetchLocations as $shift) {
+            $locationId = $shift->location->id;
+
+            // If the location is not already added
+            if (! isset($grouped[$locationId])) {
+                $grouped[$locationId]                      = $shift->location->toArray();
+                $grouped[$locationId]['locationwiseshift'] = [];
+            }
+
+            $shiftData = $shift->toArray();
+            unset($shiftData['user_id'], $shiftData['location_id'], $shiftData['location']);
+            $grouped[$locationId]['locationwiseshift'][] = $shiftData;
+        }
+
+        return response()->json([
+            "status"    => 200,
+            "user_id"   => $loginId,
+            "shiftdata" => [
+                [
+                    "locationwise" => array_values($grouped),
+                ],
+            ],
+        ], 200);
+    }
 
 }
