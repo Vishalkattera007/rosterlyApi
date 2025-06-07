@@ -89,6 +89,7 @@ class RosterController extends Controller
                             'startTime'    => $roster['startTime'],
                             'endTime'      => $roster['endTime'],
                             'breakTime'    => (float) $roster['breakTime'],
+                            'totalHrs'     => $roster['totalHrs'],
                             'hrsRate'      => $roster['hrsRate'],
                             'percentRate'  => $roster['percentRate'],
                             'totalPay'     => $roster['totalPay'],
@@ -115,6 +116,7 @@ class RosterController extends Controller
                     'startTime'    => $roster['startTime'],
                     'endTime'      => $roster['endTime'],
                     'breakTime'    => (float) $roster['breakTime'],
+                    'totalHrs'     => $roster['totalHrs'],
                     'hrsRate'      => $roster['hrsRate'],
                     'percentRate'  => $roster['percentRate'],
                     'totalPay'     => $roster['totalPay'],
@@ -294,121 +296,156 @@ class RosterController extends Controller
     }
     public function allweekdelete(Request $request)
     {
-// THIS IS WHOLE ROSTER WITH WEEK DELETE
+        try {
+            $locationId   = $request->locationId;
+            $authenticate = $request->user('api');
+            $rosterWeekId = $request->rosterWeekId;
+            if ($rosterWeekId) {
+                $deletingRosterWeek = RosterWeekModel::where('id', $rosterWeekId)
+                    ->where('location_id', $locationId)
+                    ->where('created_by', $authenticate->id)
+                    ->first();
 
-        $locationId   = $request->locationId;
-        $authenticate = $request->user('api');
-        $rosterWeekId = $request->rosterWeekId;
-        if ($rosterWeekId) {
-            $deletingRosterWeek = RosterWeekModel::where('id', $rosterWeekId)
-                ->where('location_id', $locationId)
-                ->where('created_by', $authenticate->id)
-                ->first();
+                if ($deletingRosterWeek) {
+                    $deletingRosterWeek->delete();
+                    return response()->json([
+                        'status' => true,
+                        'data'   => $deletingRosterWeek,
+                    ], 200);
+                }
 
-            if ($deletingRosterWeek) {
-                $deletingRosterWeek->delete();
-                return response()->json([
-                    'status' => true,
-                    'data'   => $deletingRosterWeek,
-                ], 200);
             }
 
+            return response()->json([
+                'status'  => false,
+                'message' => 'Roster week not found',
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Error occurred while deleting data: ' . $e->getMessage(),
+            ], 500);
         }
-
-        return response()->json([
-            'status'  => false,
-            'message' => 'Roster week not found',
-        ], 404);
 
     }
 
     public function dashboardData(Request $request)
     {
-        $authenticate = $request->user('api');
-        $loginId      = $authenticate->id;
-        $currentDate  = Carbon::now()->toDateString();
+        try {
+            $authenticate = $request->user('api');
+            $loginId      = $authenticate->id;
+            $currentDate  = Carbon::now()->toDateString();
 
-        $fetchLocations = RosterModel::with('location')
-            ->where('user_id', $loginId)
-            ->where('date', $currentDate)
-            ->get();
+            $fetchLocations = RosterModel::with('location')
+                ->where('user_id', $loginId)
+                ->where('date', $currentDate)
+                ->get();
 
-        if ($fetchLocations->isEmpty()) {
+            if ($fetchLocations->isEmpty()) {
+                return response()->json([
+                    "status"    => 200,
+                    "user_id"   => $loginId,
+                    "shiftdata" => [],
+                ], 200);
+            }
+
+            $grouped = [];
+
+            foreach ($fetchLocations as $shift) {
+                $locationId = $shift->location->id;
+
+                // If the location is not already added
+                if (! isset($grouped[$locationId])) {
+                    $grouped[$locationId]                      = $shift->location->toArray();
+                    $grouped[$locationId]['locationwiseshift'] = [];
+                }
+
+                $shiftData = $shift->toArray();
+                unset($shiftData['user_id'], $shiftData['location_id'], $shiftData['location']);
+                $grouped[$locationId]['locationwiseshift'][] = $shiftData;
+            }
+
             return response()->json([
                 "status"    => 200,
                 "user_id"   => $loginId,
-                "shiftdata" => [],
-            ], 200);
-        }
-
-        $grouped = [];
-
-        foreach ($fetchLocations as $shift) {
-            $locationId = $shift->location->id;
-
-            // If the location is not already added
-            if (! isset($grouped[$locationId])) {
-                $grouped[$locationId]                      = $shift->location->toArray();
-                $grouped[$locationId]['locationwiseshift'] = [];
-            }
-
-            $shiftData = $shift->toArray();
-            unset($shiftData['user_id'], $shiftData['location_id'], $shiftData['location']);
-            $grouped[$locationId]['locationwiseshift'][] = $shiftData;
-        }
-
-        return response()->json([
-            "status"    => 200,
-            "user_id"   => $loginId,
-            "shiftdata" => [
-                [
-                    "locationwise" => array_values($grouped),
+                "shiftdata" => [
+                    [
+                        "locationwise" => array_values($grouped),
+                    ],
                 ],
-            ],
-        ], 200);
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Error occurred:' . $e->getMessage(),
+            ], 500);
+        }
+
     }
 
     public function dashboardCards(Request $request)
     {
-        $authenticate = $request->user('api');
-        $loginId      = $authenticate->id;
+        try {
+            $authenticate = $request->user('api');
+            $loginId      = $authenticate->id;
+            $rosterWeekId = $request->rosterWeekId;
+            $locationId = $request->locationId;
+            if ($rosterWeekId) {
+                $fetchDetails = RosterModel::where('rosterWeekId', $rosterWeekId)
+                    ->where('location_id', $locationId)
+                    ->where('user_id', $loginId)
+                    ->get();
 
-        $fetchLocations = RosterModel::with('location', 'unavail')
-            ->where('user_id', $loginId)
-            ->get();
+                    return response()->json([
+                        'status' => true,
+                        'data'   => $fetchDetails,
+                    ], 200);
 
-        if ($fetchLocations->isEmpty()) {
-            return response()->json([
-                "status"    => 200,
-                "user_id"   => $loginId,
-                "shiftdata" => [],
-            ], 200);
-        }
-
-        $grouped = [];
-        foreach ($fetchLocations as $shift) {
-            $locationId = $shift->location->id;
-
-            // If the location is not already added
-            if (! isset($grouped[$locationId])) {
-                $grouped[$locationId]                      = $shift->location->toArray();
-                $grouped[$locationId]['locationwiseshift'] = [];
             }
 
-            $shiftData = $shift->toArray();
-            unset($shiftData['user_id'], $shiftData['location_id'], $shiftData['location']);
-            $grouped[$locationId]['locationwiseshift'][] = $shiftData;
+            // $fetchLocations = RosterModel::with('location', 'unavail')
+            //     ->where('user_id', $loginId)
+            //     ->get();
+
+            // if ($fetchLocations->isEmpty()) {
+            //     return response()->json([
+            //         "status"    => 200,
+            //         "user_id"   => $loginId,
+            //         "shiftdata" => [],
+            //     ], 200);
+            // }
+
+            // $grouped = [];
+            // foreach ($fetchLocations as $shift) {
+            //     $locationId = $shift->location->id;
+
+            //     // If the location is not already added
+            //     if (! isset($grouped[$locationId])) {
+            //         $grouped[$locationId]                      = $shift->location->toArray();
+            //         $grouped[$locationId]['locationwiseshift'] = [];
+            //     }
+
+            //     $shiftData = $shift->toArray();
+            //     unset($shiftData['user_id'], $shiftData['location_id'], $shiftData['location']);
+            //     $grouped[$locationId]['locationwiseshift'][] = $shiftData;
+            // }
+
+            // return response()->json([
+            //     "status"    => 200,
+            //     "user_id"   => $loginId,
+            //     "shiftdata" => [
+            //         [
+            //             "locationwise" => array_values($grouped),
+            //         ],
+            //     ],
+            // ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Error occurred:' . $e->getMessage(),
+            ], 500);
         }
 
-        return response()->json([
-            "status"    => 200,
-            "user_id"   => $loginId,
-            "shiftdata" => [
-                [
-                    "locationwise" => array_values($grouped),
-                ],
-            ],
-        ], 200);
     }
 
 }
