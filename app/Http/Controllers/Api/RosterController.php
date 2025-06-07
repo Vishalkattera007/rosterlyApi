@@ -256,32 +256,40 @@ class RosterController extends Controller
 
     public function delete(Request $request)
     {
-        $shiftId      = $request->shiftId;
-        $locationId   = $request->locationId;
-        $authenticate = $request->user('api');
-        $rosterWeekId = $request->rosterWeekId;
-        $employeeId   = $request->empId;
-        // THIS IS SINGLE ROSTER SHIFT DELERE
-        $checkforDelete = RosterModel::where('id', $shiftId)
-            ->where('location_id', $locationId)
-            ->where('created_by', $authenticate->id)
-            ->where('rosterWeekId', $rosterWeekId)
-            ->where('user_id', $employeeId)->first();
 
-        if ($checkforDelete) {
-            $checkforDelete->delete();
+        try {
+            $shiftId      = $request->shiftId;
+            $locationId   = $request->locationId;
+            $authenticate = $request->user('api');
+            $rosterWeekId = $request->rosterWeekId;
+            $employeeId   = $request->empId;
+            // THIS IS SINGLE ROSTER SHIFT DELERE
+            $checkforDelete = RosterModel::where('id', $shiftId)
+                ->where('location_id', $locationId)
+                ->where('created_by', $authenticate->id)
+                ->where('rosterWeekId', $rosterWeekId)
+                ->where('user_id', $employeeId)->first();
+
+            if ($checkforDelete) {
+                $checkforDelete->delete();
+
+                return response()->json([
+                    'status'  => true,
+                    'data'    => $checkforDelete,
+                    'message' => "Roster Shift Deleted Successfully",
+                ], 200);
+            }
 
             return response()->json([
-                'status'  => true,
-                'data'    => $checkforDelete,
-                'message' => "Roster Shift Deleted Successfully",
-            ], 200);
+                'status'  => false,
+                'message' => 'No matching shift found.',
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Error occurred while fetching shift data: ' . $e->getMessage(),
+            ], 500);
         }
-
-        return response()->json([
-            'status'  => false,
-            'message' => 'No matching shift found.',
-        ], 404);
 
     }
     public function allweekdelete(Request $request)
@@ -322,7 +330,7 @@ class RosterController extends Controller
 
         $fetchLocations = RosterModel::with('location')
             ->where('user_id', $loginId)
-            ->where('date',$currentDate)
+            ->where('date', $currentDate)
             ->get();
 
         if ($fetchLocations->isEmpty()) {
@@ -335,6 +343,49 @@ class RosterController extends Controller
 
         $grouped = [];
 
+        foreach ($fetchLocations as $shift) {
+            $locationId = $shift->location->id;
+
+            // If the location is not already added
+            if (! isset($grouped[$locationId])) {
+                $grouped[$locationId]                      = $shift->location->toArray();
+                $grouped[$locationId]['locationwiseshift'] = [];
+            }
+
+            $shiftData = $shift->toArray();
+            unset($shiftData['user_id'], $shiftData['location_id'], $shiftData['location']);
+            $grouped[$locationId]['locationwiseshift'][] = $shiftData;
+        }
+
+        return response()->json([
+            "status"    => 200,
+            "user_id"   => $loginId,
+            "shiftdata" => [
+                [
+                    "locationwise" => array_values($grouped),
+                ],
+            ],
+        ], 200);
+    }
+
+    public function dashboardCards(Request $request)
+    {
+        $authenticate = $request->user('api');
+        $loginId      = $authenticate->id;
+
+        $fetchLocations = RosterModel::with('location', 'unavail')
+            ->where('user_id', $loginId)
+            ->get();
+
+        if ($fetchLocations->isEmpty()) {
+            return response()->json([
+                "status"    => 200,
+                "user_id"   => $loginId,
+                "shiftdata" => [],
+            ], 200);
+        }
+
+        $grouped = [];
         foreach ($fetchLocations as $shift) {
             $locationId = $shift->location->id;
 
