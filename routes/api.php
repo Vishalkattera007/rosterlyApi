@@ -25,6 +25,8 @@ Route::post('pubUnpub/{weekId}/{locationId}',[RosterController::class, 'pubUnpub
 Route::delete('rosterDelete',[RosterController::class, 'delete']);
 Route::delete('rosterWeekDelete/all',[RosterController::class, 'allweekdelete']);
 Route::get('dashboardCards',[RosterController::class, 'dashboardCards']);
+Route::get('dashboardData',[RosterController::class, 'dashboardData']);
+
 
 
 Route::middleware('apiauth')->group(function () {
