@@ -380,7 +380,7 @@ class UnavailabilityController extends Controller
                 'data'    => $unavail,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'Failed to update unavailability',
                 'error'   => $e->getMessage(),
