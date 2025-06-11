@@ -262,6 +262,7 @@ class UserProfileController extends Controller
                         'id'        => $user->id,
                         'firstName' => $user->firstName,
                         'lastName'  => $user->lastName,
+                        'roleId' => $user->role_id
                         // Add more fields as needed
                     ];
                 });
