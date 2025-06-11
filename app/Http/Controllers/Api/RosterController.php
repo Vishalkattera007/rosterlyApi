@@ -40,23 +40,29 @@ class RosterController extends Controller
 
     public function getWeekDatesId(Request $request)
     {
-
         $authenticate = $request->user('api');
         $loginId      = $authenticate->id;
-        $tolerance    = 0.0001;
-        $getLatitude    = $request->latitude;
-        // $getLatitude = 17.4390946;
-        $getLogitude    = $request->longitude;
+
+        $getLatitude    = (float) $request->latitude;
+        $getLongitude   = (float) $request->longitude;
         $rWeekStartDate = $request->input('rWeekStartDate');
         $rWeekEndDate   = $request->input('rWeekEndDate');
-        // $getLogitude    = 78.3873163;
-        // $currentDate  = Carbon::now()->toDateString();
 
-        $fetchLocations = LocationUsers::with('location')->where('user_id', $loginId)
-            ->get()->pluck('location');
-        $matchedLocations = $fetchLocations->filter(function ($location) use ($getLatitude, $getLogitude, $tolerance) {
-            return abs((float) $location->latitude - $getLatitude) < $tolerance &&
-            abs((float) $location->longitude - $getLogitude) < $tolerance;
+        // Fetch locations assigned to the user
+        $fetchLocations = LocationUsers::with('location')
+            ->where('user_id', $loginId)
+            ->get()
+            ->pluck('location');
+
+        // Filter locations within 100 meters radius
+        $matchedLocations = $fetchLocations->filter(function ($location) use ($getLatitude, $getLongitude) {
+            $distance = $this->getDistanceInMeters(
+                $getLatitude,
+                $getLongitude,
+                (float) $location->latitude,
+                (float) $location->longitude
+            );
+            return $distance <= 100; // within 100 meters
         })->values();
 
         if ($matchedLocations->isEmpty()) {
@@ -65,17 +71,43 @@ class RosterController extends Controller
                 'message' => "You are not at the correct location",
             ], 404);
         }
+
         $matchedLocationIds = $matchedLocations->pluck('id');
 
-        $fetchCreatedBy = UserProfileModel::where('id', $loginId)->first();
+        $fetchCreatedBy = UserProfileModel::find($loginId);
         $created_by_id  = $fetchCreatedBy->created_by;
 
-        $fethRosterWeekId = RosterWeekModel::where('week_start_date', $rWeekStartDate)->where('week_end_date', $rWeekEndDate)->where('created_by', $created_by_id)->where('location_id', $matchedLocationIds)->get();
+        $fethRosterWeekId = RosterWeekModel::where('week_start_date', $rWeekStartDate)
+            ->where('week_end_date', $rWeekEndDate)
+            ->where('created_by', $created_by_id)
+            ->whereIn('location_id', $matchedLocationIds)
+            ->get();
+
         return response()->json([
-            'status'  => true,
+            'status'       => true,
             'rosterWeekId' => $fethRosterWeekId,
         ], 200);
+    }
 
+    private function getDistanceInMeters($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371000; // meters
+
+        $latFrom = deg2rad($lat1);
+        $lonFrom = deg2rad($lon1);
+        $latTo   = deg2rad($lat2);
+        $lonTo   = deg2rad($lon2);
+
+        $latDelta = $latTo - $latFrom;
+        $lonDelta = $lonTo - $lonFrom;
+
+        $a = sin($latDelta / 2) * sin($latDelta / 2) +
+        cos($latFrom) * cos($latTo) *
+        sin($lonDelta / 2) * sin($lonDelta / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
     }
 
     public function postRoster(Request $request)
@@ -336,7 +368,6 @@ class RosterController extends Controller
     //     }
     // }
 
-    
     /**
      * Display the specified resource.
      */
