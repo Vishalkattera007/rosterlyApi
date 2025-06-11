@@ -2,13 +2,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\RosterAssigned;
 use App\Models\LocationUsers;
 use App\Models\RosterModel;
 use App\Models\RosterWeekModel;
 use App\Models\UnavailabilityModel;
+use App\Models\UserProfileModel;
+use Carbon\CarbonPeriod;
 use Exception;
 use function PHPUnit\Framework\isEmpty;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class RosterController extends Controller
 {
@@ -69,7 +73,9 @@ class RosterController extends Controller
             $createdWeekId         = $rosterWeek->id;
             $createdWeekLocationId = $rosterWeek->location_id;
 
-            $savedRosters = [];
+            $savedRosters   = [];
+            $updatedRosters = [];
+            $userShiftMap   = [];
 
             foreach ($rosters as $roster) {
                 $rawShiftId = $roster['shiftId'] ?? null;
@@ -100,16 +106,10 @@ class RosterController extends Controller
                             'updated_by'   => $authenticate->id,
                         ]);
                         $updatedRosters[] = $existingShift;
-                        if (count($updatedRosters) > 0) {
-                            $rosterWeek->update([
-                                'is_published' => 1,
-                            ]);
-                        }
-                        continue; // ✅ Skip creating new one
+                        continue;
                     }
                 }
 
-                // Create new
                 $saved = RosterModel::create([
                     'user_id'      => $roster['user_id'],
                     'rosterWeekId' => $createdWeekId,
@@ -129,10 +129,42 @@ class RosterController extends Controller
 
                 $savedRosters[] = $saved;
             }
-            if (count($savedRosters) > 0) {
-                $rosterWeek->update([
-                    'is_published' => 1,
-                ]);
+
+            // Group roster by user and send weekly email
+            $users = RosterModel::where('rosterWeekId', $createdWeekId)
+                ->select('user_id')
+                ->distinct()
+                ->get();
+
+            foreach ($users as $userItem) {
+                $user = UserProfileModel::find($userItem->user_id);
+                if (! $user || ! $user->email) {
+                    continue;
+                }
+
+                $weeklyShifts = [];
+                $dates        = CarbonPeriod::create($rWeekStartDate, $rWeekEndDate);
+
+                foreach ($dates as $date) {
+                    $shift = RosterModel::where('user_id', $user->id)
+                        ->where('rosterWeekId', $createdWeekId)
+                        ->whereDate('date', $date->format('Y-m-d'))
+                        ->first();
+
+                    $weeklyShifts[] = [
+                        'date'      => $date->format('Y-m-d'),
+                        'startTime' => $shift ? $shift->startTime : null,
+                        'endTime'   => $shift ? $shift->endTime : null,
+                        'breakTime' => $shift ? $shift->breakTime : 0,
+                        'totalHrs'  => $shift ? $shift->totalHrs : 0,
+                    ];
+                }
+
+                Mail::to($user->email)->send(new RosterAssigned($user, $rWeekStartDate, $rWeekEndDate, $weeklyShifts));
+            }
+
+            if (count($savedRosters) > 0 || count($updatedRosters) > 0) {
+                $rosterWeek->update(['is_published' => 1]);
             }
 
             return response()->json([
@@ -148,6 +180,121 @@ class RosterController extends Controller
             ], 500);
         }
     }
+
+    // public function postRoster(Request $request)
+    // {
+    //     try {
+    //         $authenticate   = $request->user('api');
+    //         $locationId     = $request->input('locationId');
+    //         $rWeekStartDate = $request->input('rWeekStartDate');
+    //         $rWeekEndDate   = $request->input('rWeekEndDate');
+    //         $rosters        = $request->input('rosters');
+
+    //         if (! is_array($rosters) || empty($rosters)) {
+    //             return response()->json([
+    //                 'status'  => false,
+    //                 'message' => 'No roster data provided.',
+    //             ], 400);
+    //         }
+
+    //         // Check or create roster week
+    //         $rosterWeek = RosterWeekModel::where('week_start_date', $rWeekStartDate)
+    //             ->where('week_end_date', $rWeekEndDate)
+    //             ->where('location_id', $locationId)
+    //             ->where('created_by', $authenticate->id)
+    //             ->first();
+
+    //         if (! $rosterWeek) {
+    //             $rosterWeek = RosterWeekModel::create([
+    //                 'week_start_date' => $rWeekStartDate,
+    //                 'week_end_date'   => $rWeekEndDate,
+    //                 'created_by'      => $authenticate->id,
+    //                 'location_id'     => $locationId,
+    //             ]);
+    //         }
+
+    //         $createdWeekId         = $rosterWeek->id;
+    //         $createdWeekLocationId = $rosterWeek->location_id;
+
+    //         $savedRosters = [];
+
+    //         foreach ($rosters as $roster) {
+    //             $rawShiftId = $roster['shiftId'] ?? null;
+    //             $shiftId    = (is_numeric($rawShiftId) && ctype_digit((string) $rawShiftId)) ? (int) $rawShiftId : null;
+
+    //             if ($shiftId) {
+    //                 $existingShift = RosterModel::where('id', $shiftId)
+    //                     ->where('user_id', $roster['user_id'])
+    //                     ->where('location_id', $roster['location_id'])
+    //                     ->where('rosterWeekId', $createdWeekId)
+    //                     ->first();
+
+    //                 if ($existingShift) {
+    //                     $existingShift->update([
+    //                         'user_id'      => $roster['user_id'],
+    //                         'rosterWeekId' => $createdWeekId,
+    //                         'location_id'  => $roster['location_id'],
+    //                         'date'         => $roster['date'],
+    //                         'startTime'    => $roster['startTime'],
+    //                         'endTime'      => $roster['endTime'],
+    //                         'breakTime'    => (float) $roster['breakTime'],
+    //                         'totalHrs'     => $roster['totalHrs'],
+    //                         'hrsRate'      => $roster['hrsRate'],
+    //                         'percentRate'  => $roster['percentRate'],
+    //                         'totalPay'     => $roster['totalPay'],
+    //                         'status'       => $roster['status'] ?? 'active',
+    //                         'description'  => $roster['description'] ?? null,
+    //                         'updated_by'   => $authenticate->id,
+    //                     ]);
+    //                     $updatedRosters[] = $existingShift;
+    //                     if (count($updatedRosters) > 0) {
+    //                         $rosterWeek->update([
+    //                             'is_published' => 1,
+    //                         ]);
+    //                     }
+    //                     continue; // ✅ Skip creating new one
+    //                 }
+    //             }
+
+    //             // Create new
+    //             $saved = RosterModel::create([
+    //                 'user_id'      => $roster['user_id'],
+    //                 'rosterWeekId' => $createdWeekId,
+    //                 'location_id'  => $roster['location_id'] ?? $createdWeekLocationId,
+    //                 'date'         => $roster['date'],
+    //                 'startTime'    => $roster['startTime'],
+    //                 'endTime'      => $roster['endTime'],
+    //                 'breakTime'    => (float) $roster['breakTime'],
+    //                 'totalHrs'     => $roster['totalHrs'],
+    //                 'hrsRate'      => $roster['hrsRate'],
+    //                 'percentRate'  => $roster['percentRate'],
+    //                 'totalPay'     => $roster['totalPay'],
+    //                 'status'       => $roster['status'] ?? 'active',
+    //                 'description'  => $roster['description'] ?? null,
+    //                 'created_by'   => $authenticate->id,
+    //             ]);
+
+    //             $savedRosters[] = $saved;
+    //         }
+    //         if (count($savedRosters) > 0) {
+    //             $rosterWeek->update([
+    //                 'is_published' => 1,
+    //             ]);
+    //         }
+
+    //         return response()->json([
+    //             'status'  => true,
+    //             'message' => "Roster data saved successfully",
+    //             'data'    => $savedRosters,
+    //         ], 201);
+
+    //     } catch (Exception $e) {
+    //         return response()->json([
+    //             'status'  => false,
+    //             'message' => 'Error occurred while processing rosters: ' . $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
 
     /**
      * Display the specified resource.
@@ -343,7 +490,7 @@ class RosterController extends Controller
             $weekStartDate = $request->weekStartDate;
             $weekEndDate   = $request->weekStartDate;
             $rosterWeekId  = $request->rosterWeekId;
-            // $getLognitude = 78.3873163;
+            // $getLogitude = 78.3873163;
             // $currentDate  = Carbon::now()->toDateString();
 
             $fetchLocations = LocationUsers::with('location')->where('user_id', $loginId)
