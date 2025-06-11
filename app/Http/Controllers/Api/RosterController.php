@@ -95,20 +95,27 @@ class RosterController extends Controller
             }
 
             // Check or create roster week
-            $rosterWeek = RosterWeekModel::firstOrCreate(
-                [
+            $rosterWeek = RosterWeekModel::where('week_start_date', $rWeekStartDate)
+                ->where('week_end_date', $rWeekEndDate)
+                ->where('location_id', $locationId)
+                ->where('created_by', $authenticate->id)
+                ->first();
+
+            if (! $rosterWeek) {
+                $rosterWeek = RosterWeekModel::create([
                     'week_start_date' => $rWeekStartDate,
                     'week_end_date'   => $rWeekEndDate,
-                    'location_id'     => $locationId,
                     'created_by'      => $authenticate->id,
-                ]
-            );
+                    'location_id'     => $locationId,
+                ]);
+            }
 
             $createdWeekId         = $rosterWeek->id;
             $createdWeekLocationId = $rosterWeek->location_id;
 
             $savedRosters   = [];
             $updatedRosters = [];
+            $userShiftMap   = [];
 
             foreach ($rosters as $roster) {
                 $rawShiftId = $roster['shiftId'] ?? null;
@@ -143,7 +150,6 @@ class RosterController extends Controller
                     }
                 }
 
-                // Create new shift
                 $saved = RosterModel::create([
                     'user_id'      => $roster['user_id'],
                     'rosterWeekId' => $createdWeekId,
@@ -164,12 +170,7 @@ class RosterController extends Controller
                 $savedRosters[] = $saved;
             }
 
-            // Mark week as published if any updates or creations happened
-            if (count($savedRosters) > 0 || count($updatedRosters) > 0) {
-                $rosterWeek->update(['is_published' => 1]);
-            }
-
-            // Send weekly shift email to each user
+            // Group roster by user and send weekly email
             $users = RosterModel::where('rosterWeekId', $createdWeekId)
                 ->select('user_id')
                 ->distinct()
@@ -199,8 +200,11 @@ class RosterController extends Controller
                     ];
                 }
 
-                // Send email
                 Mail::to($user->email)->send(new RosterAssigned($user, $rWeekStartDate, $rWeekEndDate, $weeklyShifts));
+            }
+
+            if (count($savedRosters) > 0 || count($updatedRosters) > 0) {
+                $rosterWeek->update(['is_published' => 1]);
             }
 
             return response()->json([
@@ -332,6 +336,7 @@ class RosterController extends Controller
     //     }
     // }
 
+    
     /**
      * Display the specified resource.
      */
