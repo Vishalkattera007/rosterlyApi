@@ -44,12 +44,12 @@ class RosterController extends Controller
         $authenticate = $request->user('api');
         $loginId      = $authenticate->id;
         $tolerance    = 0.0001;
-        // $getLatitude    = $request->latitude;
-        $getLatitude = 17.4390946;
-        // $getLogitude    = $request->longitude;
+        $getLatitude    = $request->latitude;
+        // $getLatitude = 17.4390946;
+        $getLogitude    = $request->longitude;
         $rWeekStartDate = $request->input('rWeekStartDate');
         $rWeekEndDate   = $request->input('rWeekEndDate');
-        $getLogitude    = 78.3873163;
+        // $getLogitude    = 78.3873163;
         // $currentDate  = Carbon::now()->toDateString();
 
         $fetchLocations = LocationUsers::with('location')->where('user_id', $loginId)
@@ -73,7 +73,7 @@ class RosterController extends Controller
         $fethRosterWeekId = RosterWeekModel::where('week_start_date', $rWeekStartDate)->where('week_end_date', $rWeekEndDate)->where('created_by', $created_by_id)->where('location_id', $matchedLocationIds)->get();
         return response()->json([
             'status'  => true,
-            'message' => $fethRosterWeekId,
+            'rosterWeekId' => $fethRosterWeekId,
         ], 200);
 
     }
