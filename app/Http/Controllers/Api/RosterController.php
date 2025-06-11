@@ -526,7 +526,7 @@ class RosterController extends Controller
             });
             return response()->json([
                 "status"      => 200,
-                'Roster Data' => $filteredRoster,
+                'RosterData' => $filteredRoster,
                 'UnavailData' => $fetchUnavail,
             ], 200);
         } catch (Exception $e) {
