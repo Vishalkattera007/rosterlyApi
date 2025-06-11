@@ -38,6 +38,46 @@ class RosterController extends Controller
 
     }
 
+    public function getWeekDatesId(Request $request)
+    {
+
+        $authenticate = $request->user('api');
+        $loginId      = $authenticate->id;
+        $tolerance    = 0.0001;
+        // $getLatitude    = $request->latitude;
+        $getLatitude = 17.4390946;
+        // $getLogitude    = $request->longitude;
+        $rWeekStartDate = $request->input('rWeekStartDate');
+        $rWeekEndDate   = $request->input('rWeekEndDate');
+        $getLogitude    = 78.3873163;
+        // $currentDate  = Carbon::now()->toDateString();
+
+        $fetchLocations = LocationUsers::with('location')->where('user_id', $loginId)
+            ->get()->pluck('location');
+        $matchedLocations = $fetchLocations->filter(function ($location) use ($getLatitude, $getLogitude, $tolerance) {
+            return abs((float) $location->latitude - $getLatitude) < $tolerance &&
+            abs((float) $location->longitude - $getLogitude) < $tolerance;
+        })->values();
+
+        if ($matchedLocations->isEmpty()) {
+            return response()->json([
+                'status'  => false,
+                'message' => "You are not at the correct location",
+            ], 404);
+        }
+        $matchedLocationIds = $matchedLocations->pluck('id');
+
+        $fetchCreatedBy = UserProfileModel::where('id', $loginId)->first();
+        $created_by_id  = $fetchCreatedBy->created_by;
+
+        $fethRosterWeekId = RosterWeekModel::where('week_start_date', $rWeekStartDate)->where('week_end_date', $rWeekEndDate)->where('created_by', $created_by_id)->where('location_id', $matchedLocationIds)->get();
+        return response()->json([
+            'status'  => true,
+            'message' => $fethRosterWeekId,
+        ], 200);
+
+    }
+
     public function postRoster(Request $request)
     {
         try {
@@ -55,27 +95,20 @@ class RosterController extends Controller
             }
 
             // Check or create roster week
-            $rosterWeek = RosterWeekModel::where('week_start_date', $rWeekStartDate)
-                ->where('week_end_date', $rWeekEndDate)
-                ->where('location_id', $locationId)
-                ->where('created_by', $authenticate->id)
-                ->first();
-
-            if (! $rosterWeek) {
-                $rosterWeek = RosterWeekModel::create([
+            $rosterWeek = RosterWeekModel::firstOrCreate(
+                [
                     'week_start_date' => $rWeekStartDate,
                     'week_end_date'   => $rWeekEndDate,
-                    'created_by'      => $authenticate->id,
                     'location_id'     => $locationId,
-                ]);
-            }
+                    'created_by'      => $authenticate->id,
+                ]
+            );
 
             $createdWeekId         = $rosterWeek->id;
             $createdWeekLocationId = $rosterWeek->location_id;
 
             $savedRosters   = [];
             $updatedRosters = [];
-            $userShiftMap   = [];
 
             foreach ($rosters as $roster) {
                 $rawShiftId = $roster['shiftId'] ?? null;
@@ -110,6 +143,7 @@ class RosterController extends Controller
                     }
                 }
 
+                // Create new shift
                 $saved = RosterModel::create([
                     'user_id'      => $roster['user_id'],
                     'rosterWeekId' => $createdWeekId,
@@ -130,7 +164,12 @@ class RosterController extends Controller
                 $savedRosters[] = $saved;
             }
 
-            // Group roster by user and send weekly email
+            // Mark week as published if any updates or creations happened
+            if (count($savedRosters) > 0 || count($updatedRosters) > 0) {
+                $rosterWeek->update(['is_published' => 1]);
+            }
+
+            // Send weekly shift email to each user
             $users = RosterModel::where('rosterWeekId', $createdWeekId)
                 ->select('user_id')
                 ->distinct()
@@ -160,11 +199,8 @@ class RosterController extends Controller
                     ];
                 }
 
+                // Send email
                 Mail::to($user->email)->send(new RosterAssigned($user, $rWeekStartDate, $rWeekEndDate, $weeklyShifts));
-            }
-
-            if (count($savedRosters) > 0 || count($updatedRosters) > 0) {
-                $rosterWeek->update(['is_published' => 1]);
             }
 
             return response()->json([
@@ -481,34 +517,12 @@ class RosterController extends Controller
     public function dashboardData(Request $request)
     {
         try {
-            $authenticate = $request->user('api');
-            $loginId      = $authenticate->id;
-            $tolerance    = 0.0001;
-            $getLatitude  = $request->latitude;
-            // $getLatitude = 17.4390946;
-            $getLogitude   = $request->longitude;
-            $weekStartDate = $request->weekStartDate;
-            $weekEndDate   = $request->weekStartDate;
-            $rosterWeekId  = $request->rosterWeekId;
-            // $getLogitude = 78.3873163;
-            // $currentDate  = Carbon::now()->toDateString();
+            $authenticate      = $request->user('api');
+            $loginId           = $authenticate->id;
+            $rosterWeekId      = $request->rosterWeekId;
+            $matchedlocationId = $request->locationId;
 
-            $fetchLocations = LocationUsers::with('location')->where('user_id', $loginId)
-                ->get()->pluck('location');
-            $matchedLocations = $fetchLocations->filter(function ($location) use ($getLatitude, $getLogitude, $tolerance) {
-                return abs((float) $location->latitude - $getLatitude) < $tolerance &&
-                abs((float) $location->longitude - $getLogitude) < $tolerance;
-            })->values();
-
-            if ($matchedLocations->isEmpty()) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => "You are not at the correct location",
-                ], 404);
-            }
-            $matchedLocationIds = $matchedLocations->pluck('id');
-
-            $fetchRoster  = RosterModel::with('location')->where('location_id', $matchedLocationIds)->where('user_id', $loginId)->where('rosterWeekId', $rosterWeekId)->get();
+            $fetchRoster  = RosterModel::with('location')->where('location_id', $matchedlocationId)->where('user_id', $loginId)->where('rosterWeekId', $rosterWeekId)->get();
             $fetchUnavail = UnavailabilityModel::where('userId', $loginId)->get();
 
             $filteredRoster = $fetchRoster->map(function ($item) {
@@ -526,7 +540,7 @@ class RosterController extends Controller
             });
             return response()->json([
                 "status"      => 200,
-                'RosterData' => $filteredRoster,
+                'RosterData'  => $filteredRoster,
                 'UnavailData' => $fetchUnavail,
             ], 200);
         } catch (Exception $e) {
