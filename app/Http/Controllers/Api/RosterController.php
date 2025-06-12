@@ -62,7 +62,7 @@ class RosterController extends Controller
                 (float) $location->latitude,
                 (float) $location->longitude
             );
-            return $distance <= 100; // within 100 meters
+            return $distance <= 200; // within 100 meters
         })->values();
 
         if ($matchedLocations->isEmpty()) {
