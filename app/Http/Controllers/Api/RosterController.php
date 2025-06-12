@@ -512,42 +512,6 @@ class RosterController extends Controller
                 'RosterData' => $filteredRoster,
             ], 200);
 
-            // $fetchLocations = RosterModel::with('location', 'unavail')
-            //     ->where('user_id', $loginId)
-            //     ->get();
-
-            // if ($fetchLocations->isEmpty()) {
-            //     return response()->json([
-            //         "status"    => 200,
-            //         "user_id"   => $loginId,
-            //         "shiftdata" => [],
-            //     ], 200);
-            // }
-
-            // $grouped = [];
-            // foreach ($fetchLocations as $shift) {
-            //     $locationId = $shift->location->id;
-
-            //     // If the location is not already added
-            //     if (! isset($grouped[$locationId])) {
-            //         $grouped[$locationId]                      = $shift->location->toArray();
-            //         $grouped[$locationId]['locationwiseshift'] = [];
-            //     }
-
-            //     $shiftData = $shift->toArray();
-            //     unset($shiftData['user_id'], $shiftData['location_id'], $shiftData['location']);
-            //     $grouped[$locationId]['locationwiseshift'][] = $shiftData;
-            // }
-
-            // return response()->json([
-            //     "status"    => 200,
-            //     "user_id"   => $loginId,
-            //     "shiftdata" => [
-            //         [
-            //             "locationwise" => array_values($grouped),
-            //         ],
-            //     ],
-            // ], 200);
         } catch (Exception $e) {
             return response()->json([
                 'status'  => false,
