@@ -2,16 +2,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\RosterAssigned;
+use App\Models\LocationUsers;
 use App\Models\RosterModel;
 use App\Models\RosterWeekModel;
+use App\Models\UnavailabilityModel;
 use App\Models\UserProfileModel;
-use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Exception;
+use function PHPUnit\Framework\isEmpty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\RosterAssigned;
-use Carbon\CarbonPeriod;
-
 
 class RosterController extends Controller
 {
@@ -37,6 +38,77 @@ class RosterController extends Controller
 
     }
 
+    public function getWeekDatesId(Request $request)
+    {
+        $authenticate = $request->user('api');
+        $loginId      = $authenticate->id;
+
+        $getLatitude    = (float) $request->latitude;
+        $getLongitude   = (float) $request->longitude;
+        $rWeekStartDate = $request->input('rWeekStartDate');
+        $rWeekEndDate   = $request->input('rWeekEndDate');
+
+        // Fetch locations assigned to the user
+        $fetchLocations = LocationUsers::with('location')
+            ->where('user_id', $loginId)
+            ->get()
+            ->pluck('location');
+
+        // Filter locations within 100 meters radius
+        $matchedLocations = $fetchLocations->filter(function ($location) use ($getLatitude, $getLongitude) {
+            $distance = $this->getDistanceInMeters(
+                $getLatitude,
+                $getLongitude,
+                (float) $location->latitude,
+                (float) $location->longitude
+            );
+            return $distance <= 100; // within 100 meters
+        })->values();
+
+        if ($matchedLocations->isEmpty()) {
+            return response()->json([
+                'status'  => false,
+                'message' => "You are not at the correct location",
+            ], 404);
+        }
+
+        $matchedLocationIds = $matchedLocations->pluck('id');
+
+        $fetchCreatedBy = UserProfileModel::find($loginId);
+        $created_by_id  = $fetchCreatedBy->created_by;
+
+        $fethRosterWeekId = RosterWeekModel::where('week_start_date', $rWeekStartDate)
+            ->where('week_end_date', $rWeekEndDate)
+            ->where('created_by', $created_by_id)
+            ->whereIn('location_id', $matchedLocationIds)
+            ->get();
+
+        return response()->json([
+            'status'       => true,
+            'rosterWeekId' => $fethRosterWeekId,
+        ], 200);
+    }
+
+    private function getDistanceInMeters($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371000; // meters
+
+        $latFrom = deg2rad($lat1);
+        $lonFrom = deg2rad($lon1);
+        $latTo   = deg2rad($lat2);
+        $lonTo   = deg2rad($lon2);
+
+        $latDelta = $latTo - $latFrom;
+        $lonDelta = $lonTo - $lonFrom;
+
+        $a = sin($latDelta / 2) * sin($latDelta / 2) +
+        cos($latFrom) * cos($latTo) *
+        sin($lonDelta / 2) * sin($lonDelta / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
+    }
 
     public function postRoster(Request $request)
     {
@@ -138,10 +210,12 @@ class RosterController extends Controller
 
             foreach ($users as $userItem) {
                 $user = UserProfileModel::find($userItem->user_id);
-                if (! $user || ! $user->email) continue;
+                if (! $user || ! $user->email) {
+                    continue;
+                }
 
                 $weeklyShifts = [];
-                $dates = CarbonPeriod::create($rWeekStartDate, $rWeekEndDate);
+                $dates        = CarbonPeriod::create($rWeekStartDate, $rWeekEndDate);
 
                 foreach ($dates as $date) {
                     $shift = RosterModel::where('user_id', $user->id)
@@ -162,7 +236,7 @@ class RosterController extends Controller
             }
 
             if (count($savedRosters) > 0 || count($updatedRosters) > 0) {
-                $rosterWeek->update([ 'is_published' => 1 ]);
+                $rosterWeek->update(['is_published' => 1]);
             }
 
             return response()->json([
@@ -178,7 +252,6 @@ class RosterController extends Controller
             ], 500);
         }
     }
-
 
     // public function postRoster(Request $request)
     // {
@@ -480,47 +553,31 @@ class RosterController extends Controller
     public function dashboardData(Request $request)
     {
         try {
-            $authenticate = $request->user('api');
-            $loginId      = $authenticate->id;
-            $currentDate  = Carbon::now()->toDateString();
+            $authenticate      = $request->user('api');
+            $loginId           = $authenticate->id;
+            $rosterWeekId      = $request->rosterWeekId;
+            $matchedlocationId = $request->locationId;
 
-            $fetchLocations = RosterModel::with('location')
-                ->where('user_id', $loginId)
-                ->where('date', $currentDate)
-                ->get();
+            $fetchRoster  = RosterModel::with('location')->where('location_id', $matchedlocationId)->where('user_id', $loginId)->where('rosterWeekId', $rosterWeekId)->get();
+            $fetchUnavail = UnavailabilityModel::where('userId', $loginId)->get();
 
-            if ($fetchLocations->isEmpty()) {
-                return response()->json([
-                    "status"    => 200,
-                    "user_id"   => $loginId,
-                    "shiftdata" => [],
-                ], 200);
-            }
-
-            $grouped = [];
-
-            foreach ($fetchLocations as $shift) {
-                $locationId = $shift->location->id;
-
-                // If the location is not already added
-                if (! isset($grouped[$locationId])) {
-                    $grouped[$locationId]                      = $shift->location->toArray();
-                    $grouped[$locationId]['locationwiseshift'] = [];
-                }
-
-                $shiftData = $shift->toArray();
-                unset($shiftData['user_id'], $shiftData['location_id'], $shiftData['location']);
-                $grouped[$locationId]['locationwiseshift'][] = $shiftData;
-            }
-
+            $filteredRoster = $fetchRoster->map(function ($item) {
+                return [
+                    'rosterWeekId'  => $item->rosterWeekId,
+                    'location_name' => $item->location->location_name ?? null,
+                    'date'          => $item->date,
+                    'startTime'     => $item->startTime,
+                    'breakTime'     => $item->breakTime,
+                    'endTime'       => $item->endTime,
+                    'totalHrs'      => $item->totalHrs,
+                    'description'   => $item->description,
+                    'status'        => $item->status,
+                ];
+            });
             return response()->json([
-                "status"    => 200,
-                "user_id"   => $loginId,
-                "shiftdata" => [
-                    [
-                        "locationwise" => array_values($grouped),
-                    ],
-                ],
+                "status"      => 200,
+                'RosterData'  => $filteredRoster,
+                'UnavailData' => $fetchUnavail,
             ], 200);
         } catch (Exception $e) {
             return response()->json([
@@ -537,17 +594,17 @@ class RosterController extends Controller
             $authenticate = $request->user('api');
             $loginId      = $authenticate->id;
             $rosterWeekId = $request->rosterWeekId;
-            $locationId = $request->locationId;
+            $locationId   = $request->locationId;
             if ($rosterWeekId) {
                 $fetchDetails = RosterModel::where('rosterWeekId', $rosterWeekId)
                     ->where('location_id', $locationId)
                     ->where('user_id', $loginId)
                     ->get();
 
-                    return response()->json([
-                        'status' => true,
-                        'data'   => $fetchDetails,
-                    ], 200);
+                return response()->json([
+                    'status' => true,
+                    'data'   => $fetchDetails,
+                ], 200);
 
             }
 
