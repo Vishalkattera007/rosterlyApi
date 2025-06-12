@@ -29,5 +29,6 @@ class RosterAssigned extends Mailable
         return $this->subject('Your Weekly Roster Assigned')
                     ->view('emails.roster-assigned');
     }
+
 }
 

@@ -75,7 +75,7 @@ class RosterController extends Controller
 
             $savedRosters   = [];
             $updatedRosters = [];
-            $userShiftMap   = [];
+           
 
             foreach ($rosters as $roster) {
                 $rawShiftId = $roster['shiftId'] ?? null;
