@@ -147,7 +147,6 @@ class RosterController extends Controller
 
             $savedRosters   = [];
             $updatedRosters = [];
-           
 
             foreach ($rosters as $roster) {
                 $rawShiftId = $roster['shiftId'] ?? null;
@@ -252,121 +251,6 @@ class RosterController extends Controller
             ], 500);
         }
     }
-
-    // public function postRoster(Request $request)
-    // {
-    //     try {
-    //         $authenticate   = $request->user('api');
-    //         $locationId     = $request->input('locationId');
-    //         $rWeekStartDate = $request->input('rWeekStartDate');
-    //         $rWeekEndDate   = $request->input('rWeekEndDate');
-    //         $rosters        = $request->input('rosters');
-
-    //         if (! is_array($rosters) || empty($rosters)) {
-    //             return response()->json([
-    //                 'status'  => false,
-    //                 'message' => 'No roster data provided.',
-    //             ], 400);
-    //         }
-
-    //         // Check or create roster week
-    //         $rosterWeek = RosterWeekModel::where('week_start_date', $rWeekStartDate)
-    //             ->where('week_end_date', $rWeekEndDate)
-    //             ->where('location_id', $locationId)
-    //             ->where('created_by', $authenticate->id)
-    //             ->first();
-
-    //         if (! $rosterWeek) {
-    //             $rosterWeek = RosterWeekModel::create([
-    //                 'week_start_date' => $rWeekStartDate,
-    //                 'week_end_date'   => $rWeekEndDate,
-    //                 'created_by'      => $authenticate->id,
-    //                 'location_id'     => $locationId,
-    //             ]);
-    //         }
-
-    //         $createdWeekId         = $rosterWeek->id;
-    //         $createdWeekLocationId = $rosterWeek->location_id;
-
-    //         $savedRosters = [];
-
-    //         foreach ($rosters as $roster) {
-    //             $rawShiftId = $roster['shiftId'] ?? null;
-    //             $shiftId    = (is_numeric($rawShiftId) && ctype_digit((string) $rawShiftId)) ? (int) $rawShiftId : null;
-
-    //             if ($shiftId) {
-    //                 $existingShift = RosterModel::where('id', $shiftId)
-    //                     ->where('user_id', $roster['user_id'])
-    //                     ->where('location_id', $roster['location_id'])
-    //                     ->where('rosterWeekId', $createdWeekId)
-    //                     ->first();
-
-    //                 if ($existingShift) {
-    //                     $existingShift->update([
-    //                         'user_id'      => $roster['user_id'],
-    //                         'rosterWeekId' => $createdWeekId,
-    //                         'location_id'  => $roster['location_id'],
-    //                         'date'         => $roster['date'],
-    //                         'startTime'    => $roster['startTime'],
-    //                         'endTime'      => $roster['endTime'],
-    //                         'breakTime'    => (float) $roster['breakTime'],
-    //                         'totalHrs'     => $roster['totalHrs'],
-    //                         'hrsRate'      => $roster['hrsRate'],
-    //                         'percentRate'  => $roster['percentRate'],
-    //                         'totalPay'     => $roster['totalPay'],
-    //                         'status'       => $roster['status'] ?? 'active',
-    //                         'description'  => $roster['description'] ?? null,
-    //                         'updated_by'   => $authenticate->id,
-    //                     ]);
-    //                     $updatedRosters[] = $existingShift;
-    //                     if (count($updatedRosters) > 0) {
-    //                         $rosterWeek->update([
-    //                             'is_published' => 1,
-    //                         ]);
-    //                     }
-    //                     continue; // ✅ Skip creating new one
-    //                 }
-    //             }
-
-    //             // Create new
-    //             $saved = RosterModel::create([
-    //                 'user_id'      => $roster['user_id'],
-    //                 'rosterWeekId' => $createdWeekId,
-    //                 'location_id'  => $roster['location_id'] ?? $createdWeekLocationId,
-    //                 'date'         => $roster['date'],
-    //                 'startTime'    => $roster['startTime'],
-    //                 'endTime'      => $roster['endTime'],
-    //                 'breakTime'    => (float) $roster['breakTime'],
-    //                 'totalHrs'     => $roster['totalHrs'],
-    //                 'hrsRate'      => $roster['hrsRate'],
-    //                 'percentRate'  => $roster['percentRate'],
-    //                 'totalPay'     => $roster['totalPay'],
-    //                 'status'       => $roster['status'] ?? 'active',
-    //                 'description'  => $roster['description'] ?? null,
-    //                 'created_by'   => $authenticate->id,
-    //             ]);
-
-    //             $savedRosters[] = $saved;
-    //         }
-    //         if (count($savedRosters) > 0) {
-    //             $rosterWeek->update([
-    //                 'is_published' => 1,
-    //             ]);
-    //         }
-
-    //         return response()->json([
-    //             'status'  => true,
-    //             'message' => "Roster data saved successfully",
-    //             'data'    => $savedRosters,
-    //         ], 201);
-
-    //     } catch (Exception $e) {
-    //         return response()->json([
-    //             'status'  => false,
-    //             'message' => 'Error occurred while processing rosters: ' . $e->getMessage(),
-    //         ], 500);
-    //     }
-    // }
 
     /**
      * Display the specified resource.
@@ -591,22 +475,42 @@ class RosterController extends Controller
     public function dashboardCards(Request $request)
     {
         try {
-            $authenticate = $request->user('api');
-            $loginId      = $authenticate->id;
-            $rosterWeekId = $request->rosterWeekId;
-            $locationId   = $request->locationId;
-            if ($rosterWeekId) {
-                $fetchDetails = RosterModel::where('rosterWeekId', $rosterWeekId)
-                    ->where('location_id', $locationId)
-                    ->where('user_id', $loginId)
-                    ->get();
+            $authenticate   = $request->user('api');
+            $loginId        = $authenticate->id;
+            $rWeekStartDate = $request->input('rWeekStartDate');
+            $rWeekEndDate   = $request->input('rWeekEndDate');
 
-                return response()->json([
-                    'status' => true,
-                    'data'   => $fetchDetails,
-                ], 200);
+            $fetchCreatedBy = UserProfileModel::find($loginId);
+            $created_by_id  = $fetchCreatedBy->created_by;
 
-            }
+            $fethRosterWeekId = RosterWeekModel::where('week_start_date', $rWeekStartDate)
+                ->where('week_end_date', $rWeekEndDate)
+                ->where('created_by', $created_by_id)
+                ->pluck('id');
+
+            $rosters = RosterModel::with('location') // or any relationships you want
+                ->whereIn('rosterWeekId', $fethRosterWeekId)
+                ->where('user_id', $loginId)
+                ->get();
+
+            $filteredRoster = $rosters->map(function ($item) {
+                return [
+                    'rosterWeekId'  => $item->rosterWeekId,
+                    'location_name' => $item->location->location_name ?? null,
+                    'date'          => $item->date,
+                    'startTime'     => $item->startTime,
+                    'breakTime'     => $item->breakTime,
+                    'endTime'       => $item->endTime,
+                    'totalHrs'      => $item->totalHrs,
+                    'description'   => $item->description,
+                    'status'        => $item->status,
+                ];
+            });
+
+            return response()->json([
+                'status'  => true,
+                'RosterData' => $filteredRoster,
+            ], 200);
 
             // $fetchLocations = RosterModel::with('location', 'unavail')
             //     ->where('user_id', $loginId)
