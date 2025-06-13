@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\LocationSalesController;
 use App\Http\Controllers\Api\RolesController;
+use App\Http\Controllers\Api\RosterAttendanceController;
 use App\Http\Controllers\Api\RosterController;
 use App\Http\Controllers\Api\UnavailabilityController;
 use App\Http\Controllers\Api\UserProfileController;
@@ -27,7 +28,8 @@ Route::delete('rosterDelete',[RosterController::class, 'delete']);
 Route::delete('rosterWeekDelete/all',[RosterController::class, 'allweekdelete']);
 Route::get('dashboardCards',[RosterController::class, 'dashboardCards']);
 Route::get('dashboardData',[RosterController::class, 'dashboardData']);
-
+Route::post('/attendance/log', [RosterAttendanceController::class, 'logAction']);
+Route::get('/attendance/logs', [RosterAttendanceController::class, 'getActions']);
 
 
 Route::middleware('apiauth')->group(function () {

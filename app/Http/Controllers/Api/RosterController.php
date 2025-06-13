@@ -439,7 +439,7 @@ public function delete(Request $request)
             'updatedRoster' => $weeklyShifts
         ], 200);
 
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return response()->json([
             'status' => false,
             'message' => 'Error occurred while deleting shift: ' . $e->getMessage(),
