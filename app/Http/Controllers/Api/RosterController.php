@@ -13,6 +13,7 @@ use Exception;
 use function PHPUnit\Framework\isEmpty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use App\Mail\RosterShiftDeleted; // Create this mailable
 
 class RosterController extends Controller
 {
@@ -361,44 +362,91 @@ class RosterController extends Controller
 
     }
 
-    public function delete(Request $request)
-    {
 
-        try {
-            $shiftId      = $request->shiftId;
-            $locationId   = $request->locationId;
-            $authenticate = $request->user('api');
-            $rosterWeekId = $request->rosterWeekId;
-            $employeeId   = $request->empId;
-            // THIS IS SINGLE ROSTER SHIFT DELERE
-            $checkforDelete = RosterModel::where('id', $shiftId)
-                ->where('location_id', $locationId)
-                ->where('created_by', $authenticate->id)
-                ->where('rosterWeekId', $rosterWeekId)
-                ->where('user_id', $employeeId)->first();
+public function delete(Request $request)
+{
+    try {
+        $shiftId      = $request->shiftId;
+        $locationId   = $request->locationId;
+        $rosterWeekId = $request->rosterWeekId;
+        $employeeId   = $request->empId;
 
-            if ($checkforDelete) {
-                $checkforDelete->delete();
+        // Find the shift
+        $checkforDelete = RosterModel::where('id', $shiftId)
+            ->where('location_id', $locationId)
+            ->where('rosterWeekId', $rosterWeekId)
+            ->where('user_id', $employeeId)
+            ->first();
 
-                return response()->json([
-                    'status'  => true,
-                    'data'    => $checkforDelete,
-                    'message' => "Roster Shift Deleted Successfully",
-                ], 200);
-            }
-
+        if (!$checkforDelete) {
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => 'No matching shift found.',
             ], 404);
-        } catch (Exception $e) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Error occurred while fetching shift data: ' . $e->getMessage(),
-            ], 500);
         }
 
+        // Save deleted date before deleting
+        $deletedDate = $checkforDelete->date;
+
+        // Delete shift
+        $checkforDelete->delete();
+
+        // Fetch user info
+        $user = UserProfileModel::find($employeeId);
+
+        // Fetch week start & end dates
+        $week = RosterWeekModel::find($rosterWeekId);
+        $weekStartDate = \Carbon\Carbon::parse($week?->week_start_date);
+        $weekEndDate   = \Carbon\Carbon::parse($week?->week_end_date);
+
+        // Fetch existing shifts
+        $existingShifts = RosterModel::where('rosterWeekId', $rosterWeekId)
+            ->where('user_id', $employeeId)
+            ->where('location_id', $locationId)
+            ->get()
+            ->keyBy(fn($shift) => \Carbon\Carbon::parse($shift->date)->toDateString());
+
+        // Fill full week shifts
+        $weeklyShifts = [];
+        for ($date = $weekStartDate->copy(); $date->lte($weekEndDate); $date->addDay()) {
+            $key = $date->toDateString();
+            $shift = $existingShifts[$key] ?? null;
+
+            $weeklyShifts[] = [
+                'date'      => $key,
+                'startTime' => $shift->startTime ?? null,
+                'endTime'   => $shift->endTime ?? null,
+                'breakTime' => $shift->breakTime ?? 0,
+                'totalHrs'  => $shift->totalHrs ?? 0,
+            ];
+        }
+
+        // Send email if user has email
+        if ($user && $user->email) {
+            Mail::to($user->email)->send(new RosterShiftDeleted(
+                $user,
+                $weeklyShifts,
+                $weekStartDate,
+                $weekEndDate,
+                $deletedDate
+            ));
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Roster Shift Deleted Successfully',
+            'deletedDate' => $deletedDate,
+            'updatedRoster' => $weeklyShifts
+        ], 200);
+
+    } catch (Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Error occurred while deleting shift: ' . $e->getMessage(),
+        ], 500);
     }
+}
+
     public function allweekdelete(Request $request)
     {
         try {
