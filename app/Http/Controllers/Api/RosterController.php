@@ -448,6 +448,7 @@ class RosterController extends Controller
             $filteredRoster = $fetchRoster->map(function ($item) {
                 return [
                     'rosterWeekId'  => $item->rosterWeekId,
+                    'rosterId'      => $item->id,
                     'location_Id'   => $item->location->id,
                     'location_name' => $item->location->location_name ?? null,
                     'date'          => $item->date,
