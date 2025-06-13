@@ -362,7 +362,6 @@ class RosterController extends Controller
 
     }
 
-  
 
 public function delete(Request $request)
 {
@@ -372,40 +371,77 @@ public function delete(Request $request)
         $rosterWeekId = $request->rosterWeekId;
         $employeeId   = $request->empId;
 
-        // Find shift
+        // Find the shift
         $checkforDelete = RosterModel::where('id', $shiftId)
             ->where('location_id', $locationId)
             ->where('rosterWeekId', $rosterWeekId)
             ->where('user_id', $employeeId)
             ->first();
 
-        if ($checkforDelete) {
-            // Find user
-            $user = UserProfileModel::find($employeeId);
-
-            // Send email if user and email exist
-            if ($user && $user->email) {
-                Mail::to($user->email)->send(new RosterShiftDeleted($user, $checkforDelete));
-            }
-
-            // Delete shift
-            $checkforDelete->delete();
-
+        if (!$checkforDelete) {
             return response()->json([
-                'status'  => true,
-                'data'    => $checkforDelete,
-                'message' => "Roster Shift Deleted Successfully",
-            ], 200);
+                'status' => false,
+                'message' => 'No matching shift found.',
+            ], 404);
+        }
+
+        // Save deleted date before deleting
+        $deletedDate = $checkforDelete->date;
+
+        // Delete shift
+        $checkforDelete->delete();
+
+        // Fetch user info
+        $user = UserProfileModel::find($employeeId);
+
+        // Fetch week start & end dates
+        $week = RosterWeekModel::find($rosterWeekId);
+        $weekStartDate = \Carbon\Carbon::parse($week?->week_start_date);
+        $weekEndDate   = \Carbon\Carbon::parse($week?->week_end_date);
+
+        // Fetch existing shifts
+        $existingShifts = RosterModel::where('rosterWeekId', $rosterWeekId)
+            ->where('user_id', $employeeId)
+            ->where('location_id', $locationId)
+            ->get()
+            ->keyBy(fn($shift) => \Carbon\Carbon::parse($shift->date)->toDateString());
+
+        // Fill full week shifts
+        $weeklyShifts = [];
+        for ($date = $weekStartDate->copy(); $date->lte($weekEndDate); $date->addDay()) {
+            $key = $date->toDateString();
+            $shift = $existingShifts[$key] ?? null;
+
+            $weeklyShifts[] = [
+                'date'      => $key,
+                'startTime' => $shift->startTime ?? null,
+                'endTime'   => $shift->endTime ?? null,
+                'breakTime' => $shift->breakTime ?? 0,
+                'totalHrs'  => $shift->totalHrs ?? 0,
+            ];
+        }
+
+        // Send email if user has email
+        if ($user && $user->email) {
+            Mail::to($user->email)->send(new RosterShiftDeleted(
+                $user,
+                $weeklyShifts,
+                $weekStartDate,
+                $weekEndDate,
+                $deletedDate
+            ));
         }
 
         return response()->json([
-            'status'  => false,
-            'message' => 'No matching shift found.',
-        ], 404);
+            'status' => true,
+            'message' => 'Roster Shift Deleted Successfully',
+            'deletedDate' => $deletedDate,
+            'updatedRoster' => $weeklyShifts
+        ], 200);
 
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         return response()->json([
-            'status'  => false,
+            'status' => false,
             'message' => 'Error occurred while deleting shift: ' . $e->getMessage(),
         ], 500);
     }

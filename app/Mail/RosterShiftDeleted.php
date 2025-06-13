@@ -3,36 +3,29 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class RosterShiftDeleted extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $user;
-    public $shift;
+    public $user, $weeklyShifts, $weekStartDate, $weekEndDate, $deletedDate;
 
-    /**
-     * Create a new message instance.
-     */
-     public function __construct($user, $shift)
-    {
-        $this->user = $user;
-        $this->shift = $shift;
-    }
+public function __construct($user, $weeklyShifts, $weekStartDate, $weekEndDate, $deletedDate)
+{
+    $this->user = $user;
+    $this->weeklyShifts = $weeklyShifts;
+    $this->weekStartDate = $weekStartDate;
+    $this->weekEndDate = $weekEndDate;
+    $this->deletedDate = $deletedDate;
+}
 
-    /**
-     * Get the message envelope.
-     */
+
     public function build()
     {
-        return $this->subject('Your shift has been removed')
-                    ->view('emails.roster_shift_deleted');
+        return $this->subject('Your Updated Weekly Roster')
+            ->view('emails.roster_shift_deleted');
     }
-
-    
 }
+
