@@ -34,7 +34,7 @@
                     <td width="55%" align="right" style="font-size: 14px;">
                         @if($start && $end)
                             {{ $start }} - {{ $end }}<br>
-                            🍽️ Break: {{ $break }} hr<br>
+                            🍽️ Break: {{ $break }} min<br>
                             ⏱️ Total: {{ $total }} hr
                         @else
                             <strong>OFF</strong>
