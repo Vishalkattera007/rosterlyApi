@@ -105,11 +105,15 @@ class UserProfileController extends Controller
                 'created_at'     => now(),
             ]);
 
+            // Get role name
+            $roleName = optional($userCreate->role)->role_name ?? 'Role';
+
+
             // Send generated password to user via email
             Mail::to($request->email)->send(new SendPasswordMail($generatedPassword));
 
             return response()->json([
-                'message' => "User created and a confirmation email has been sent to the user's email address.",
+                'message' => "{$roleName} created and a confirmation email has been sent to the user's email address.",
                 'data'    => $userCreate,
                 'status'  => true,
             ], 201);
