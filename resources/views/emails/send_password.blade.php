@@ -1,23 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Your Login Credentials - Rosterly</title>
+    <title>Your Login Password</title>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6;">
-    <p>Dear {{ $firstName }},</p>
+<body>
+    <p>Hello {{ $firstName }},</p>
 
-    <p>Welcome to <strong>Rosterly</strong>!</p>
+    <p>Welcome to Rosterly! Please find your login credentials below:</p>
 
-    <p>Your login has been successfully created. You can log in using your registered email address. Below are your login credentials:</p>
+    <p><strong>Email:</strong> Your registered email address</p>
+    <p><strong>Password:</strong> <span style="color: blue;">{{ $password }}</span></p>
 
-    <p><strong>Password:</strong> {{ $password }}</p>
+    <p>Please login and change your password after the first login.</p>
 
-    <p>For security reasons, we recommend that you change your password after logging in for the first time.</p>
+    <p>
+        <a href="https://rosterly.up.railway.app/">Login here</a>
+    </p>
 
-    <p>Click the link below to access your account:</p>
-    
-    <p><a href="https://rosterly.up.railway.app/" target="_blank">👉 Login to Rosterly</a></p>
-
-    <p>Regards, <br>Team Rosterly</p>
+    <br><br>
+    <p>Regards,</p>
+    <p>Rosterly Team</p>
 </body>
 </html>

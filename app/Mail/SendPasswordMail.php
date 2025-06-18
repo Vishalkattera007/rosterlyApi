@@ -13,11 +13,12 @@ class SendPasswordMail extends Mailable
     use Queueable, SerializesModels;
 
     public string $password;
+    public string $firstName;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(string $password,$firstName)
+    public function __construct(string $password, string $firstName)
     {
         $this->password = $password;
         $this->firstName = $firstName;
@@ -39,7 +40,7 @@ class SendPasswordMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.send_password',  // Make sure you create this Blade view
+            view: 'emails.send_password',
         );
     }
 

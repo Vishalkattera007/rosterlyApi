@@ -110,7 +110,8 @@ class UserProfileController extends Controller
 
 
             // Send generated password to user via email
-            Mail::to($request->email)->send(new SendPasswordMail($generatedPassword));
+            Mail::to($request->email)->send(new SendPasswordMail($generatedPassword, $request->firstName));
+
 
             return response()->json([
                 'message' => "{$roleName} created and a confirmation email has been sent to the user's email address.",
