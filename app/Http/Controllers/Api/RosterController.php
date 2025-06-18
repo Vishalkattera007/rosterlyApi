@@ -111,15 +111,7 @@ class RosterController extends Controller
         return $earthRadius * $c;
     }
 
-    use Illuminate\Http\Request;
-use App\Models\RosterWeekModel;
-use App\Models\RosterModel;
-use App\Models\UserProfileModel;
-use App\Mail\RosterAssigned;
-use Illuminate\Support\Facades\Mail;
-use Carbon\CarbonPeriod;
-
-public function postRoster(Request $request)
+    public function postRoster(Request $request)
 {
     try {
         $authenticate   = $request->user('api');
@@ -135,31 +127,24 @@ public function postRoster(Request $request)
             ], 400);
         }
 
-        // Check or create roster week
-        $rosterWeek = RosterWeekModel::where('week_start_date', $rWeekStartDate)
-            ->where('week_end_date', $rWeekEndDate)
-            ->where('location_id', $locationId)
-            ->where('created_by', $authenticate->id)
-            ->first();
+        // Get or create the roster week
+        $rosterWeek = RosterWeekModel::firstOrCreate([
+            'week_start_date' => $rWeekStartDate,
+            'week_end_date'   => $rWeekEndDate,
+            'location_id'     => $locationId,
+            'created_by'      => $authenticate->id,
+        ]);
 
-        if (!$rosterWeek) {
-            $rosterWeek = RosterWeekModel::create([
-                'week_start_date' => $rWeekStartDate,
-                'week_end_date'   => $rWeekEndDate,
-                'created_by'      => $authenticate->id,
-                'location_id'     => $locationId,
-            ]);
-        }
-
-        $createdWeekId         = $rosterWeek->id;
+        $createdWeekId = $rosterWeek->id;
         $createdWeekLocationId = $rosterWeek->location_id;
 
         $savedRosters   = [];
         $updatedRosters = [];
+        $newUserIds     = [];
 
         foreach ($rosters as $roster) {
             $rawShiftId = $roster['shiftId'] ?? null;
-            $shiftId    = (is_numeric($rawShiftId) && ctype_digit((string) $rawShiftId)) ? (int)$rawShiftId : null;
+            $shiftId    = (is_numeric($rawShiftId) && ctype_digit((string)$rawShiftId)) ? (int)$rawShiftId : null;
 
             if ($shiftId) {
                 $existingShift = RosterModel::where('id', $shiftId)
@@ -186,10 +171,14 @@ public function postRoster(Request $request)
                         'updated_by'   => $authenticate->id,
                     ]);
                     $updatedRosters[] = $existingShift;
+
+                    // ✉️ Send mail to only this updated user
+                    $this->sendRosterEmail($existingShift->user_id, $createdWeekId, $rWeekStartDate, $rWeekEndDate);
                     continue;
                 }
             }
 
+            // CREATE ROSTER ENTRY
             $saved = RosterModel::create([
                 'user_id'      => $roster['user_id'],
                 'rosterWeekId' => $createdWeekId,
@@ -208,49 +197,22 @@ public function postRoster(Request $request)
             ]);
 
             $savedRosters[] = $saved;
+            $newUserIds[]   = $roster['user_id'];
         }
 
-        // ✅ Send email only to affected users (updated or newly created)
-        $affectedUserIds = collect($savedRosters)
-            ->merge($updatedRosters)
-            ->pluck('user_id')
-            ->unique();
-
-        foreach ($affectedUserIds as $userId) {
-            $user = UserProfileModel::find($userId);
-            if (!$user || !$user->email) {
-                continue;
-            }
-
-            $weeklyShifts = [];
-            $dates = CarbonPeriod::create($rWeekStartDate, $rWeekEndDate);
-
-            foreach ($dates as $date) {
-                $shift = RosterModel::where('user_id', $user->id)
-                    ->where('rosterWeekId', $createdWeekId)
-                    ->whereDate('date', $date->format('Y-m-d'))
-                    ->first();
-
-                $weeklyShifts[] = [
-                    'date'      => $date->format('Y-m-d'),
-                    'startTime' => $shift ? $shift->startTime : null,
-                    'endTime'   => $shift ? $shift->endTime : null,
-                    'breakTime' => $shift ? $shift->breakTime : 0,
-                    'totalHrs'  => $shift ? $shift->totalHrs : 0,
-                ];
-            }
-
-            Mail::to($user->email)->send(new RosterAssigned($user, $rWeekStartDate, $rWeekEndDate, $weeklyShifts));
+        // ✅ After creation, send emails to all newly added users
+        $uniqueNewUserIds = collect($newUserIds)->unique();
+        foreach ($uniqueNewUserIds as $userId) {
+            $this->sendRosterEmail($userId, $createdWeekId, $rWeekStartDate, $rWeekEndDate);
         }
 
-        // ✅ Mark week as published if any changes occurred
         if (count($savedRosters) > 0 || count($updatedRosters) > 0) {
             $rosterWeek->update(['is_published' => 1]);
         }
 
         return response()->json([
             'status'  => true,
-            'message' => "Roster data saved successfully",
+            'message' => "Roster data processed successfully",
             'data'    => $savedRosters,
         ], 201);
 
@@ -260,6 +222,33 @@ public function postRoster(Request $request)
             'message' => 'Error occurred while processing rosters: ' . $e->getMessage(),
         ], 500);
     }
+}
+
+
+private function sendRosterEmail($userId, $rosterWeekId, $startDate, $endDate)
+{
+    $user = UserProfileModel::find($userId);
+    if (!$user || !$user->email) return;
+
+    $weeklyShifts = [];
+    $dates = CarbonPeriod::create($startDate, $endDate);
+
+    foreach ($dates as $date) {
+        $shift = RosterModel::where('user_id', $user->id)
+            ->where('rosterWeekId', $rosterWeekId)
+            ->whereDate('date', $date->format('Y-m-d'))
+            ->first();
+
+        $weeklyShifts[] = [
+            'date'      => $date->format('Y-m-d'),
+            'startTime' => $shift ? $shift->startTime : null,
+            'endTime'   => $shift ? $shift->endTime : null,
+            'breakTime' => $shift ? $shift->breakTime : 0,
+            'totalHrs'  => $shift ? $shift->totalHrs : 0,
+        ];
+    }
+
+    Mail::to($user->email)->send(new RosterAssigned($user, $startDate, $endDate, $weeklyShifts));
 }
 
 
