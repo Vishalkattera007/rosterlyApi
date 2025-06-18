@@ -17,9 +17,10 @@ class SendPasswordMail extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct(string $password)
+    public function __construct(string $password,$email)
     {
         $this->password = $password;
+        $this->email = $email;
     }
 
     /**
