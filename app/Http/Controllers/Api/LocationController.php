@@ -293,9 +293,12 @@ class LocationController extends Controller
                         ]);
                     }
                 }
+                // Append role name to the list
+            
             }
+            
 
-            return response()->json(['message' => 'Users assigned to location successfully'], 200);
+            return response()->json(['message' => '{$roleName} assigned to location successfully'], 200);
 
         } catch (Exception $e) {
             return response()->json(['message' => 'Failed to assign users to location', 'error' => $e->getMessage()], 500);
