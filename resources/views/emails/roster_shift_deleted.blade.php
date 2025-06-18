@@ -47,6 +47,5 @@
             @endforeach
         </table>
     </div>
-
-</body>
+  </body>
 </html>
