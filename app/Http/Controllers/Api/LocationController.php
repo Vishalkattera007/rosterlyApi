@@ -133,6 +133,27 @@ class LocationController extends Controller
         ]);
     }
 
+
+   // In your Controller
+public function getUserIdsByLocation($locationId, Request $request)
+{
+    try {
+        $userIds = LocationUsers::where('location_id', $locationId)->get();
+
+        return response()->json([
+            'status'   => true,
+            'user_ids' => $userIds,
+        ]);
+    } catch (Exception $e) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'Failed to fetch user IDs',
+            'error'   => $e->getMessage(),
+        ], 500);
+    }
+}
+
+
     // fetch employee based on location id
     public function getUsersByLocation($locationId, Request $request)
     {
@@ -166,98 +187,6 @@ class LocationController extends Controller
             ], 500);
         }
     }
-
-    // public function getRolesByLocationId($locationId, $roleId)
-    // {
-    //     try {
-    //         $users = UserProfileModel::with('location')
-    //             ->whereRaw("FIND_IN_SET(?, location_id)", [$locationId])
-    //             ->where('role_id', $roleId)
-    //             ->get();
-
-    //         return response()->json([
-    //             'message' => $users->isEmpty() ? 'No users found.' : 'Users fetched successfully.',
-    //             'data'    => $users,
-    //             'status'  => true,
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'message' => 'Error fetching users.',
-    //             'error'   => $e->getMessage(),
-    //             'status'  => false,
-    //         ], 500);
-    //     }
-    // }
-
-    // public function assignLocationToEmployees(Request $request)
-    // {
-    //     try {
-    //         $locationId     = $request->location_id;
-    //         $duplicateUsers = [];
-    //         $assignedUsers  = [];
-
-    //         foreach ($request->employee_ids as $employeeId) {
-    //             $user = UserProfileModel::find($employeeId);
-
-    //             if (! $user) {
-    //                 continue; // Optionally collect missing users
-    //             }
-
-    //             $existingLocations = $user->location_ids;
-
-    //             if (in_array($locationId, $existingLocations)) {
-    //                 $duplicateUsers[] = $user->firstName . ' ' . $user->lastName;
-    //                 continue;
-    //             }
-
-    //             $user->addLocations([$locationId]);
-    //             $assignedUsers[] = $user->id;
-    //         }
-
-    //         return response()->json([
-    //             'status'             => true,
-    //             'message'            => count($duplicateUsers)
-    //             ? 'Some Employee were already assigned to this location.'
-    //             : 'All Employee assigned successfully.',
-    //             'already_assigned'   => $duplicateUsers,
-    //             'newly_assigned_ids' => $assignedUsers,
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'status'  => false,
-    //             'message' => 'An error occurred while assigning employees.',
-    //             'error'   => $e->getMessage(), // For debugging, remove in production
-    //         ], 500);
-    //     }
-    // }
-
-    // public function getEmployeesByLocation($location_id)
-    // {
-    //     try {
-    //         $locationId = (string) $location_id;
-
-    //         $employees = UserProfileModel::where(function ($query) use ($locationId) {
-    //             $query->where('location_id', $locationId)
-    //                 ->orWhere('location_id', 'LIKE', $locationId . ',%')
-    //                 ->orWhere('location_id', 'LIKE', '%,' . $locationId . ',%')
-    //                 ->orWhere('location_id', 'LIKE', '%,' . $locationId);
-    //         })->get();
-
-    //         return response()->json([
-    //             'status'    => true,
-    //             'message'   => 'Employees fetched successfully.',
-    //             'employees' => $employees,
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'status'  => false,
-    //             'message' => 'Error fetching employees.',
-    //             'error'   => $e->getMessage(),
-    //         ], 500);
-    //     }
-    // }
-
-    // onelocation - multiple users
 
     public function postUsersinLocation(Request $request, $locationId)
     {
