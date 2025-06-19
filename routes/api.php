@@ -68,8 +68,8 @@ Route::middleware('apiauth')->group(function () {
         Route::delete('{id}', [LocationController::class, 'destroy']);
         // Fetch users by location ID
         Route::get('/{locationId}/role/{roleId}', [LocationController::class, 'getRolesByLocationId']);
+        Route::get('/{location_id}/users', [LocationController::class, 'getUsersByLocation']);
         // Route::get('/{location_id}/users', [LocationController::class, 'getUsersByLocation']);
-        Route::get('/{location_id}/users', [LocationController::class, 'getUserIdsByLocation']);
 
         Route::post('/{locationId}/users', [LocationController::class, 'postUsersinLocation']);
         Route::put('/{locationId}/users/', [LocationController::class, 'updateUsersLocation']);

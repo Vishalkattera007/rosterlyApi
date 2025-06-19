@@ -135,23 +135,23 @@ class LocationController extends Controller
 
 
    // In your Controller
-public function getUserIdsByLocation($locationId, Request $request)
-{
-    try {
-        $userIds = LocationUsers::where('location_id', $locationId)->get();
+// public function getUserIdsByLocation($locationId, Request $request)
+// {
+//     try {
+//         $userIds = LocationUsers::where('location_id', $locationId)->get();
 
-        return response()->json([
-            'status'   => true,
-            'user_ids' => $userIds,
-        ]);
-    } catch (Exception $e) {
-        return response()->json([
-            'status'  => false,
-            'message' => 'Failed to fetch user IDs',
-            'error'   => $e->getMessage(),
-        ], 500);
-    }
-}
+//         return response()->json([
+//             'status'   => true,
+//             'user_ids' => $userIds,
+//         ]);
+//     } catch (Exception $e) {
+//         return response()->json([
+//             'status'  => false,
+//             'message' => 'Failed to fetch user IDs',
+//             'error'   => $e->getMessage(),
+//         ], 500);
+//     }
+// }
 
 
     // fetch employee based on location id
