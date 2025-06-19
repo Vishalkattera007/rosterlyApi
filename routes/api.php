@@ -23,6 +23,7 @@ Route::get('rosterfetch/{location_id?}/{loginId?}', [RosterController::class, 'g
 Route::post('rosterWeekftch', [RosterController::class, 'getRosterWeekData']);
 Route::get('rosterWeekDay', [RosterController::class, 'getWeekDatesId']);
 Route::POST('porstRoster', [RosterController::class, 'postRoster']);
+Route::post('/updateSingleRoster', [RosterController::class, 'updateSingleUserRoster']);
 Route::post('pubUnpub/{weekId}/{locationId}',[RosterController::class, 'pubUnpub'] );
 Route::delete('rosterDelete',[RosterController::class, 'delete']);
 Route::delete('rosterWeekDelete/all',[RosterController::class, 'allweekdelete']);
