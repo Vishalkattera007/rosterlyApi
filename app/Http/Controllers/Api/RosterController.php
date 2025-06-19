@@ -114,12 +114,13 @@ class RosterController extends Controller
    public function postRoster(Request $request)
 {
     try {
-        $authenticate   = $request->user('api');
-        $locationId     = $request->input('locationId');
-        $rWeekStartDate = $request->input('rWeekStartDate');
-        $rWeekEndDate   = $request->input('rWeekEndDate');
-        $rosters        = $request->input('rosters');
-        $modifiedUserIds = $request->input('modifiedUserIds', []);
+        $authenticate     = $request->user('api');
+        $locationId       = $request->input('locationId');
+        $rWeekStartDate   = $request->input('rWeekStartDate');
+        $rWeekEndDate     = $request->input('rWeekEndDate');
+        $rosters          = $request->input('rosters');
+        $modifiedUserIds  = $request->input('modifiedUserIds', []); // From frontend
+        $updatedUserIds   = []; // ✅ Track backend updates
 
         if (!is_array($rosters) || empty($rosters)) {
             return response()->json([
@@ -128,7 +129,7 @@ class RosterController extends Controller
             ], 400);
         }
 
-        // Check or create roster week
+        // Fetch or create roster week
         $rosterWeek = RosterWeekModel::where('week_start_date', $rWeekStartDate)
             ->where('week_end_date', $rWeekEndDate)
             ->where('location_id', $locationId)
@@ -177,6 +178,7 @@ class RosterController extends Controller
                         'updated_by'   => $authenticate->id,
                     ]);
                     $updatedRosters[] = $existingShift;
+                    $updatedUserIds[] = $roster['user_id']; // ✅ add updated user
                     continue;
                 }
             }
@@ -198,22 +200,13 @@ class RosterController extends Controller
                 'created_by'   => $authenticate->id,
             ]);
             $savedRosters[] = $saved;
+            $updatedUserIds[] = $roster['user_id']; // ✅ even new users need email
         }
 
-        // Determine which users to send email to
-        $isFirstTimePublish = $rosterWeek->is_published == 0;
-        $users = [];
+        // ✅ Merge modifiedUserIds (frontend) + updatedUserIds (backend)
+        $users = array_unique(array_merge($modifiedUserIds, $updatedUserIds));
 
-        if ($isFirstTimePublish) {
-            // Notify all users
-            $users = RosterModel::where('rosterWeekId', $createdWeekId)
-                ->select('user_id')->distinct()->pluck('user_id')->toArray();
-        } else {
-            // Notify only modified users
-            $users = $modifiedUserIds;
-        }
-
-        // Send email
+        // ✅ Send email to each user
         foreach ($users as $userId) {
             $user = UserProfileModel::find($userId);
             if (!$user || !$user->email) continue;
@@ -235,27 +228,31 @@ class RosterController extends Controller
                 ];
             }
 
+            // Send the email (use your mailable class)
             Mail::to($user->email)->send(new RosterAssigned($user, $rWeekStartDate, $rWeekEndDate, $weeklyShifts));
+
+            \Log::info("Roster mail sent to: {$user->email}");
         }
 
-        // Mark roster week as published
+        // ✅ Update roster week as published
         if (count($savedRosters) > 0 || count($updatedRosters) > 0) {
             $rosterWeek->update(['is_published' => 1]);
         }
 
         return response()->json([
-            'status' => true,
-            'message' => "Roster saved successfully",
-            'roster_week_id' => $rosterWeek->id,
+            'status'          => true,
+            'message'         => "Roster saved successfully",
+            'roster_week_id'  => $rosterWeek->id,
         ]);
 
     } catch (Exception $e) {
         return response()->json([
-            'status' => false,
+            'status'  => false,
             'message' => 'Error: ' . $e->getMessage(),
         ], 500);
     }
 }
+
 
 
     /**
