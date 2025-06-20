@@ -221,13 +221,19 @@ class LocationController extends Controller
                             // 'updated_by'  => Auth::id(),
                         ]);
                     }
+                      // Get role name (assuming you have a relationship or mapping)
+                    $roleName = $user->role->role_name ?? 'Unknown'; // or use RoleModel::find($user->role_id)->name
+                    $assignedRoles[] = $roleName;
                 }
                 // Append role name to the list
             
             }
             
 
-            return response()->json(['message' => '{$roleName} assigned to location successfully'], 200);
+           return response()->json([
+            'message' => implode(', ', $assignedRoles) . ' assigned to location successfully'
+        ], 200);
+
 
         } catch (Exception $e) {
             return response()->json(['message' => 'Failed to assign users to location', 'error' => $e->getMessage()], 500);
