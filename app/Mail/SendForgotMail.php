@@ -13,7 +13,7 @@ class SendForgotMail extends Mailable
     use Queueable, SerializesModels;
 
     public $password;
-
+    public $firstName;
     /**
      * Create a new message instance.
      */
@@ -41,6 +41,10 @@ class SendForgotMail extends Mailable
     {
         return new Content(
             view: 'emails.send_password',
+             with: [
+            'password' => $this->password,
+            'firstName' => $this->firstName,
+        ],
         );
     }
 
