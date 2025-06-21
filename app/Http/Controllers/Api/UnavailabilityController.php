@@ -12,8 +12,6 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\DB;
-
 
 class UnavailabilityController extends Controller
 {
@@ -339,55 +337,56 @@ class UnavailabilityController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, $id)
-{
-    try {
-        $unavail = UnavailabilityModel::find($id);
+    {
+        try {
+            // Find the unavailability record
+            $unavail = UnavailabilityModel::find($id);
 
-        if (! $unavail) {
-            return response()->json(['message' => 'Unavailability record not found'], 404);
-        }
+            if (! $unavail) {
+                return response()->json(['message' => 'Unavailability record not found'], 404);
+            }
 
-        // Update fields
-        $unavail->unavailType = $request->unavailType;
-        $unavail->fromDT      = $request->fromDT;
-        $unavail->toDT        = $request->toDT;
-        $unavail->reason      = $request->reason;
-        $unavail->notifyTo    = $request->notifyTo;
-        $unavail->updated_by  = $request->userId;
+            // Common fields for both types
+            $unavail->unavailType = $request->unavailType;
+            $unavail->fromDT      = $request->fromDT;
+            $unavail->toDT        = $request->toDT;
+            $unavail->reason      = $request->reason;
+            $unavail->notifyTo    = $request->notifyTo;
+            $unavail->updated_by  = $request->userId;
 
-        $unavail->day = $request->unavailType == 2 ? $request->day : null;
+            // Conditional field based on unavailType
+            if ($id == 2) {
+                $unavail->day = $request->day;
+            } else {
+                $unavail->day = null;
+            }
 
-        if (isset($request->unavailStatus)) {
-            $statusMap = [
-                'pending'  => 0,
-                'approved' => 1,
-                'rejected' => 2,
-            ];
-            $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? $unavail->unavailStatus;
-        }
+            // Optional: handle status update only if provided
+            if (isset($request->unavailStatus)) {
+                $statusMap = [
+                    'pending'  => 0,
+                    'approved' => 1,
+                    'rejected' => 2,
+                ];
+                $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? $unavail->unavailStatus;
+            }
 
-        $unavail->save();
+            $unavail->save();
 
-        // 🔔 Send updated notification
-        $fetchNotifyData = UserProfileModel::find($request->notifyTo);
-        $notifyEmail = $fetchNotifyData->email ?? null;
-
-        $this->sendNotification($request, $unavail, 'Updated unavailability request from', $notifyEmail);
-
-        return response()->json([
-            'message' => $request->unavailType == 2
+            return response()->json([
+                'message' => $id == 2
                 ? "Recurring unavailability for {$request->day} updated successfully"
                 : "Unavailability updated successfully",
-            'data'    => $unavail,
-        ]);
+                'data'    => $unavail,
+            ]);
 
-    } catch (Exception $e) {
-        return response()->json([
-            'message' => 'Failed to update unavailability',
-            'error'   => $e->getMessage(),
-        ], 500);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed to update unavailability',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
-}
 
     /**
      * Remove the specified resource from storage.
@@ -412,59 +411,33 @@ class UnavailabilityController extends Controller
     // helper function to send notification
 
     protected function sendNotification($request, $unavail, $title, $email)
-{
-    $notifyToUser = UserProfileModel::find($request->notifyTo);
-    $user         = UserProfileModel::find($request->userId);
+    {
+        $notifyToUser = UserProfileModel::find($request->notifyTo);
+        $user         = UserProfileModel::find($request->userId);
 
-    $userName = $user ? $user->firstName . ' ' . $user->lastName : 'Unknown User';
+        $userName = $user ? $user->firstName . ' ' . $user->lastName : 'Unknown User';
 
-    if ($notifyToUser) {
-        Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
+        if ($notifyToUser) {
+            Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
+            $notificationMessage = $userName . 'has submitted' . $title . ' ' . $request->fromDT . ' ' . $request->toDT;
+            $notification        = new UnavailabilityNotification([
+                'title'     => $title,
+                'userId'    => $request->userId,
+                'userName'  => $userName,
+                'fromDT'    => $request->fromDT,
+                'toDT'      => $request->toDT,
+                'reason'    => $request->reason,
+                'unavailId' => $unavail->id,
+                'day'       => $request->day,
+            ]);
 
-        $notificationMessage = $userName . ' has submitted ' . $title . ' from ' .
-                               $request->fromDT . ' to ' . $request->toDT .
-                               ' | Reason: ' . $request->reason;
-
-        // ✅ Ensure the key is always 'unavailId'
-        $notificationData = [
-            'title'     => $title,
-            'userId'    => $request->userId,
-            'userName'  => $userName,
-            'fromDT'    => $request->fromDT,
-            'toDT'      => $request->toDT,
-            'reason'    => $request->reason,
-            'unavailId' => $unavail->id, // ✅ Correct key used here
-            'day'       => $request->day,
-        ];
-
-        // ✅ Check for existing notification using the correct key
-        $existingNotification = DB::table('notifications')
-            ->whereJsonContains('data->unavailId', $unavail->id)
-            ->orderByDesc('created_at')
-            ->first();
-
-        if ($existingNotification) {
-            // ✅ Update notification
-            DB::table('notifications')
-                ->where('id', $existingNotification->id)
-                ->update([
-                    'data'       => json_encode($notificationData),
-                    'updated_at' => now(),
-                ]);
-
-            Log::info("Notification updated for unavailId: {$unavail->id}");
-        } else {
-            // ✅ Create new notification
-            $notification = new UnavailabilityNotification($notificationData);
+            
             $notifyToUser->notify($notification);
-            Log::info("New notification created for unavailId: {$unavail->id}");
+            Mail::to($email)->send(new SendNotificationsMail($notificationMessage));
+            Log::info("Notification sent to user ID: " . $notifyToUser->id);
+        } else {
+            Log::warning('notifyTo user not found. ID: ' . $request->notifyTo);
         }
-
-        // ✅ Send email
-        Mail::to($email)->send(new SendNotificationsMail($notificationMessage));
-    } else {
-        Log::warning('notifyTo user not found. ID: ' . $request->notifyTo);
     }
-}
 
 }
