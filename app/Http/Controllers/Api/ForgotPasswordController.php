@@ -35,7 +35,7 @@ class ForgotPasswordController extends Controller
         ]);
     }
 
-    $firstName = $user->first_name ?? $user->name ?? 'User'; // Adjust field based on your DB column
+    $firstName = $user->firstName ?? $user->firstName ?? 'User'; // Adjust field based on your DB column
 
 
     $newPassword = Str::random(8); // Generate random 8-character password
