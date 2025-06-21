@@ -12,6 +12,8 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+
 
 class UnavailabilityController extends Controller
 {
@@ -410,33 +412,57 @@ class UnavailabilityController extends Controller
     // helper function to send notification
 
     protected function sendNotification($request, $unavail, $title, $email)
-    {
-        $notifyToUser = UserProfileModel::find($request->notifyTo);
-        $user         = UserProfileModel::find($request->userId);
+{
+    $notifyToUser = UserProfileModel::find($request->notifyTo);
+    $user         = UserProfileModel::find($request->userId);
 
-        $userName = $user ? $user->firstName . ' ' . $user->lastName : 'Unknown User';
+    $userName = $user ? $user->firstName . ' ' . $user->lastName : 'Unknown User';
 
-        if ($notifyToUser) {
-            Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
-            $notificationMessage = $userName . 'has submitted' . $title . ' ' . $request->fromDT . ' ' . $request->toDT;
-            $notification        = new UnavailabilityNotification([
-                'title'     => $title,
-                'userId'    => $request->userId,
-                'userName'  => $userName,
-                'fromDT'    => $request->fromDT,
-                'toDT'      => $request->toDT,
-                'reason'    => $request->reason,
-                'unavailId' => $unavail->id,
-                'day'       => $request->day,
-            ]);
+    if ($notifyToUser) {
+        Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
 
-            
-            $notifyToUser->notify($notification);
-            Mail::to($email)->send(new SendNotificationsMail($notificationMessage));
-            Log::info("Notification sent to user ID: " . $notifyToUser->id);
+        $notificationMessage = $userName . ' has submitted ' . $title . ' from ' .
+                               $request->fromDT . ' to ' . $request->toDT .
+                               ' | Reason: ' . $request->reason;
+
+        $notificationData = [
+            'title'     => $title,
+            'userId'    => $request->userId,
+            'userName'  => $userName,
+            'fromDT'    => $request->fromDT,
+            'toDT'      => $request->toDT,
+            'reason'    => $request->reason,
+            'unavailId' => $unavail->id,
+            'day'       => $request->day,
+        ];
+
+        // ✅ Check if existing notification exists for this unavailability
+        $existingNotification = DB::table('notifications')
+            ->whereJsonContains('data->unavailId', $unavail->id)
+            ->orderByDesc('created_at')
+            ->first();
+
+        if ($existingNotification) {
+            // ✅ Update the existing notification's data
+            DB::table('notifications')
+                ->where('id', $existingNotification->id)
+                ->update([
+                    'data'       => json_encode($notificationData),
+                    'updated_at' => now(),
+                ]);
+
+            Log::info("Notification updated for unavailId: {$unavail->id}");
         } else {
-            Log::warning('notifyTo user not found. ID: ' . $request->notifyTo);
+            // ✅ Create new notification if none exists
+            $notification = new UnavailabilityNotification($notificationData);
+            $notifyToUser->notify($notification);
+            Log::info("New notification created for unavailId: {$unavail->id}");
         }
-    }
 
+        // ✅ Optionally send mail
+        Mail::to($email)->send(new SendNotificationsMail($notificationMessage));
+    } else {
+        Log::warning('notifyTo user not found. ID: ' . $request->notifyTo);
+    }
+}
 }
