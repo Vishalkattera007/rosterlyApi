@@ -337,56 +337,55 @@ class UnavailabilityController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, $id)
-    {
-        try {
-            // Find the unavailability record
-            $unavail = UnavailabilityModel::find($id);
+{
+    try {
+        $unavail = UnavailabilityModel::find($id);
 
-            if (! $unavail) {
-                return response()->json(['message' => 'Unavailability record not found'], 404);
-            }
+        if (! $unavail) {
+            return response()->json(['message' => 'Unavailability record not found'], 404);
+        }
 
-            // Common fields for both types
-            $unavail->unavailType = $request->unavailType;
-            $unavail->fromDT      = $request->fromDT;
-            $unavail->toDT        = $request->toDT;
-            $unavail->reason      = $request->reason;
-            $unavail->notifyTo    = $request->notifyTo;
-            $unavail->updated_by  = $request->userId;
+        // Update fields
+        $unavail->unavailType = $request->unavailType;
+        $unavail->fromDT      = $request->fromDT;
+        $unavail->toDT        = $request->toDT;
+        $unavail->reason      = $request->reason;
+        $unavail->notifyTo    = $request->notifyTo;
+        $unavail->updated_by  = $request->userId;
 
-            // Conditional field based on unavailType
-            if ($id == 2) {
-                $unavail->day = $request->day;
-            } else {
-                $unavail->day = null;
-            }
+        $unavail->day = $request->unavailType == 2 ? $request->day : null;
 
-            // Optional: handle status update only if provided
-            if (isset($request->unavailStatus)) {
-                $statusMap = [
-                    'pending'  => 0,
-                    'approved' => 1,
-                    'rejected' => 2,
-                ];
-                $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? $unavail->unavailStatus;
-            }
+        if (isset($request->unavailStatus)) {
+            $statusMap = [
+                'pending'  => 0,
+                'approved' => 1,
+                'rejected' => 2,
+            ];
+            $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? $unavail->unavailStatus;
+        }
 
-            $unavail->save();
+        $unavail->save();
 
-            return response()->json([
-                'message' => $id == 2
+        // 🔔 Send updated notification
+        $fetchNotifyData = UserProfileModel::find($request->notifyTo);
+        $notifyEmail = $fetchNotifyData->email ?? null;
+
+        $this->sendNotification($request, $unavail, 'Updated unavailability request from', $notifyEmail);
+
+        return response()->json([
+            'message' => $request->unavailType == 2
                 ? "Recurring unavailability for {$request->day} updated successfully"
                 : "Unavailability updated successfully",
-                'data'    => $unavail,
-            ]);
+            'data'    => $unavail,
+        ]);
 
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => 'Failed to update unavailability',
-                'error'   => $e->getMessage(),
-            ], 500);
-        }
+    } catch (Exception $e) {
+        return response()->json([
+            'message' => 'Failed to update unavailability',
+            'error'   => $e->getMessage(),
+        ], 500);
     }
+}
 
     /**
      * Remove the specified resource from storage.
