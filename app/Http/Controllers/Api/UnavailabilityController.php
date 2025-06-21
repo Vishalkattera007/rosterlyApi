@@ -425,6 +425,7 @@ class UnavailabilityController extends Controller
                                $request->fromDT . ' to ' . $request->toDT .
                                ' | Reason: ' . $request->reason;
 
+        // ✅ Ensure the key is always 'unavailId'
         $notificationData = [
             'title'     => $title,
             'userId'    => $request->userId,
@@ -432,18 +433,18 @@ class UnavailabilityController extends Controller
             'fromDT'    => $request->fromDT,
             'toDT'      => $request->toDT,
             'reason'    => $request->reason,
-            'unavailId' => $unavail->id,
+            'unavailId' => $unavail->id, // ✅ Correct key used here
             'day'       => $request->day,
         ];
 
-        // ✅ Check if existing notification exists for this unavailability
+        // ✅ Check for existing notification using the correct key
         $existingNotification = DB::table('notifications')
             ->whereJsonContains('data->unavailId', $unavail->id)
             ->orderByDesc('created_at')
             ->first();
 
         if ($existingNotification) {
-            // ✅ Update the existing notification's data
+            // ✅ Update notification
             DB::table('notifications')
                 ->where('id', $existingNotification->id)
                 ->update([
@@ -453,16 +454,17 @@ class UnavailabilityController extends Controller
 
             Log::info("Notification updated for unavailId: {$unavail->id}");
         } else {
-            // ✅ Create new notification if none exists
+            // ✅ Create new notification
             $notification = new UnavailabilityNotification($notificationData);
             $notifyToUser->notify($notification);
             Log::info("New notification created for unavailId: {$unavail->id}");
         }
 
-        // ✅ Optionally send mail
+        // ✅ Send email
         Mail::to($email)->send(new SendNotificationsMail($notificationMessage));
     } else {
         Log::warning('notifyTo user not found. ID: ' . $request->notifyTo);
     }
 }
+
 }
