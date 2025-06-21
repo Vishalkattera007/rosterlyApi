@@ -326,54 +326,65 @@ class UserProfileController extends Controller
     }
 
     public function getnotifications(Request $request)
-{
-    $user = $request->user('api'); // Authenticated user
+    {
+        $user = $request->user('api'); // Authenticated user
 
-    if (! $user) {
+        if (! $user) {
+            return response()->json([
+                'message' => 'User not authenticated',
+            ], 401);
+        }
+
+        $fetchNotificationResponse = Enter::table('notifications')
+            ->where('notifiable_id', $user->id)
+            ->whereNull('read_at')->get();
+        if ($fetchNotificationResponse === 0) {
+            return response()->json([
+                'message' => 'No notifications found',
+                'data'    => [],
+            ]);
+        } else {
+            $formattedNotifications = $fetchNotificationResponse->map(function ($notification) {
+
+                $allnotdata = [
+                    'id'            => $notification->id,
+                    'notifiable_id' => $notification->notifiable_id,
+                    'data'          => json_decode($notification->data, true), // Decode the JSON data
+                    'read_at'       => $notification->read_at,
+                    'created_at'    => $notification->created_at,
+                    'updated_at'    => $notification->updated_at,
+                ];
+
+                                    // $outerData = json_decode($notification->data, true);
+                return $allnotdata; // Extract the nested "data"
+            });
+            return response()->json([
+                'message'       => 'Notifications fetched successfully',
+                'notifications' => $formattedNotifications,
+
+            ]);
+        }
+
+        // Fetch notifications where notifiable_id = logged in user ID
+        $notifications = Enter::table('notifications')
+            ->where('notifiable_id', $user->id)
+            ->select('id', 'notifiable_id', 'data', 'read_at')
+            ->get();
+
+        $sep_data = $notifications->map(function ($notifing) {
+            return [
+                'id'            => $notifing->id,
+                'notifiable_id' => $notifing->notifiable_id,
+                'data'          => json_decode($notifing->data),
+                'read_at'       => $notifing->read_at,
+            ];
+        });
         return response()->json([
-            'message' => 'User not authenticated',
-        ], 401);
-    }
-
-    // Fetch all unread notifications for the user
-    $notifications = DB::table('notifications')
-        ->where('notifiable_id', $user->id)
-        ->whereNull('read_at')
-        ->orderByDesc('created_at')
-        ->get();
-
-    if ($notifications->isEmpty()) {
-        return response()->json([
-            'message' => 'No notifications found',
-            'notifications' => [],
+            'message' => 'Notifications fetched successfully',
+            'data'    => $sep_data,
         ]);
     }
 
-    // Group by unavailId and take the latest per group
-    $grouped = $notifications->groupBy(function ($item) {
-        $data = json_decode($item->data, true);
-        return $data['unavailId'] ?? $data['unavailabilityId'] ?? null; // fallback for legacy keys
-    })->map(function ($group) {
-        return $group->sortByDesc('created_at')->first();
-    })->filter();
-
-    // Format the response
-    $formatted = $grouped->map(function ($notification) {
-        return [
-            'id'            => $notification->id,
-            'notifiable_id' => $notification->notifiable_id,
-            'data'          => json_decode($notification->data, true),
-            'read_at'       => $notification->read_at,
-            'created_at'    => $notification->created_at,
-            'updated_at'    => $notification->updated_at,
-        ];
-    })->values(); // reset keys
-
-    return response()->json([
-        'message'       => 'Notifications fetched successfully',
-        'notifications' => $formatted,
-    ]);
-}
     public function markAllAsRead(Request $request)
     {
         $request->validate([
