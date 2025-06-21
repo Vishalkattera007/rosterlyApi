@@ -433,13 +433,13 @@ class UnavailabilityController extends Controller
             'fromDT'    => $request->fromDT,
             'toDT'      => $request->toDT,
             'reason'    => $request->reason,
-            'unavailabilityId' => $unavail->id, // ✅ Correct key used here
+            'unavailId' => $unavail->id, // ✅ Correct key used here
             'day'       => $request->day,
         ];
 
         // ✅ Check for existing notification using the correct key
         $existingNotification = DB::table('notifications')
-            ->whereJsonContains('data->unavailabilityId', $unavail->id)
+            ->whereJsonContains('data->unavailId', $unavail->id)
             ->orderByDesc('created_at')
             ->first();
 
