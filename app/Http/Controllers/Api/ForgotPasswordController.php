@@ -17,6 +17,7 @@ class ForgotPasswordController extends Controller
 {
     // Basic check without validation
     $email = $request->email;
+    
 
     if (!$email) {
         return response()->json([
@@ -34,6 +35,9 @@ class ForgotPasswordController extends Controller
         ]);
     }
 
+    $firstName = $user->first_name ?? $user->name ?? 'User'; // Adjust field based on your DB column
+
+
     $newPassword = Str::random(8); // Generate random 8-character password
 
     // Update password in DB
@@ -41,7 +45,7 @@ class ForgotPasswordController extends Controller
     $user->save();
 
     // Send Email
-    Mail::to($user->email)->send(new SendForgotMail($newPassword));
+    Mail::to($user->email)->send(new SendForgotMail($newPassword, $firstName));
 
     return response()->json([
         'status' => true,

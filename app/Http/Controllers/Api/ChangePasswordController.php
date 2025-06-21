@@ -46,7 +46,7 @@ class ChangePasswordController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Password updated successfully.'
+            'message' => 'Password Updated Successfully.'
         ]);
     }
 

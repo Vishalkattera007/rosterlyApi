@@ -210,7 +210,7 @@ class UserProfileController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'User updated successfully',
+                'message' => 'Profile Updated Successfully',
                 'data'    => $user,
             ], 200);
         } catch (Exception $e) {

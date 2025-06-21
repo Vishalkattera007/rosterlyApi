@@ -17,9 +17,11 @@ class SendForgotMail extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct($password)
+    public function __construct($password, $firstName)
     {
         $this->password = $password;
+        $this->firstName = $firstName;
+
     }
 
     /**
