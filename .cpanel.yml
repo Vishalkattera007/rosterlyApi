@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - chmod 0660 storage/oauth-private.key
+    - chmod 0660 storage/oauth-public.key
