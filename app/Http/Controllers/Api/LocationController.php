@@ -295,7 +295,7 @@ class LocationController extends Controller
 
         // Get unique role names from location_users -> roles
         $roleNames = DB::table('locationUsers')
-            ->join('roles', 'locationUsers.role_id', '=', 'roles.id')
+            ->join('roles', 'locationUsers.role', '=', 'roles.id')
             ->where('locationUsers.location_id', $locationId)
             ->whereIn('locationUsers.user_id', $userIds)
             ->pluck('roles.role_name')
