@@ -35,27 +35,36 @@ class UserProfileController extends Controller
         ]);
     }
 
-    public function index($id = null)
-    {
-        if ($id != null) {
-            $userProfile = UserProfileModel::find($id);
-            if (! $userProfile) {
-                return response()->json([
-                    'message' => 'User not found',
-                ], 404);
-            }
+   public function index($id = null)
+{
+    if ($id != null) {
+        $userProfile = UserProfileModel::where('id', $id)
+            ->where('status', 1)
+            ->where('deletestatus', 0)
+            ->first();
+
+        if (! $userProfile) {
             return response()->json([
-                'message' => 'User Profile found',
-                'data'    => $userProfile,
-            ]);
-        } else {
-            $findAllUsers = UserProfileModel::where('deletestatus', 0)->get();
-            return response()->json([
-                'message' => 'userProfile list',
-                'data'    => $findAllUsers,
-            ]);
+                'message' => 'User not found',
+            ], 404);
         }
+
+        return response()->json([
+            'message' => 'User Profile found',
+            'data'    => $userProfile,
+        ]);
+    } else {
+        $findAllUsers = UserProfileModel::where('status', 1)
+            ->where('deletestatus', 0)
+            ->get();
+
+        return response()->json([
+            'message' => 'User profile list',
+            'data'    => $findAllUsers,
+        ]);
     }
+}
+
 
     /**
      * Store a newly created resource in storage.
