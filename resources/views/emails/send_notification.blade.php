@@ -7,6 +7,6 @@
     <p>Hello,</p>
     <p>You got notification from: <strong>{{ $notificationMessage }}</strong></p>
     <p>Login for Approve or Deny the request</p>
-    <a href="https://rosterly.up.railway.app/">Login here</a>
+    <a href="{{ env('APP_LIVE_URL') }}">Login here</a>
 </body>
 </html>
