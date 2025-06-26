@@ -283,6 +283,7 @@ class LocationController extends Controller
         }
     }
 
+
     public function deleteUserFromLocation(Request $request, $locationId)
     {
         try {
@@ -292,12 +293,24 @@ class LocationController extends Controller
                 return response()->json(['message' => 'No user IDs provided'], 400);
             }
 
-            // Delete all matching records in one query
+            // Fetch role names before deletion
+            $roleNames = UserProfileModel::whereIn('id', $userIds)
+                ->join('roles', 'user_profiles.role_id', '=', 'roles.id') // Adjust if you use a different role relationship
+                ->pluck('roles.role_name')
+                ->unique()
+                ->toArray();
+
+            // Delete matching records
             LocationUsers::where('location_id', $locationId)
                 ->whereIn('user_id', $userIds)
                 ->delete();
 
-            return response()->json(['message' => 'Users removed from location successfully'], 200);
+            $rolesText = implode(', ', $roleNames);
+            $message = count($roleNames) > 1 
+                ? "Users with roles {$rolesText} removed from location successfully"
+                : "Users with role {$rolesText} removed from location successfully";
+
+            return response()->json(['message' => $message], 200);
 
         } catch (Exception $e) {
             return response()->json([
@@ -306,4 +319,5 @@ class LocationController extends Controller
             ], 500);
         }
     }
+
 }
