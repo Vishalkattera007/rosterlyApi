@@ -309,8 +309,8 @@ class LocationController extends Controller
 
         $rolesText = implode(', ', $roleNames);
         $message = count($roleNames) > 1 
-            ? "Users with roles {$rolesText} removed from location successfully"
-            : "Users with role {$rolesText} removed from location successfully";
+            ? "{$rolesText} removed from location successfully"
+            : "{$rolesText} removed from location successfully";
 
         return response()->json(['message' => $message], 200);
 
