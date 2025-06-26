@@ -14,7 +14,7 @@
     <p>Please login and change your password after the first login.</p>
 
     <p>
-        <a href="{{ env('APP_LIVE_URL') }}">Login here</a>
+        <a href="https://rosterly.glansadesigns.com/">Login here</a>
     </p>
 
     <br><br>

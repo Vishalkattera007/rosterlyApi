@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 
+
 class DownloadRosterPdf extends Controller
 {
     public function downloadRosterPDF(Request $request)
