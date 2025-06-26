@@ -9,6 +9,7 @@ use App\Models\UserProfileModel;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class LocationController extends Controller
 {
@@ -283,41 +284,41 @@ class LocationController extends Controller
         }
     }
 
-
     public function deleteUserFromLocation(Request $request, $locationId)
-    {
-        try {
-            $userIds = $request->input('user_ids', []);
+{
+    try {
+        $userIds = $request->input('user_ids', []);
 
-            if (empty($userIds)) {
-                return response()->json(['message' => 'No user IDs provided'], 400);
-            }
-
-            // Fetch role names before deletion
-            $roleNames = UserProfileModel::whereIn('id', $userIds)
-                ->join('roles', 'user_profiles.role_id', '=', 'roles.id') // Adjust if you use a different role relationship
-                ->pluck('roles.role_name')
-                ->unique()
-                ->toArray();
-
-            // Delete matching records
-            LocationUsers::where('location_id', $locationId)
-                ->whereIn('user_id', $userIds)
-                ->delete();
-
-            $rolesText = implode(', ', $roleNames);
-            $message = count($roleNames) > 1 
-                ? "Users with roles {$rolesText} removed from location successfully"
-                : "Users with role {$rolesText} removed from location successfully";
-
-            return response()->json(['message' => $message], 200);
-
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => 'Failed to remove users from location',
-                'error'   => $e->getMessage(),
-            ], 500);
+        if (empty($userIds)) {
+            return response()->json(['message' => 'No user IDs provided'], 400);
         }
-    }
 
+        // Get unique role names from location_users -> roles
+        $roleNames = DB::table('locationUsers')
+            ->join('roles', 'locationUsers.role_id', '=', 'roles.id')
+            ->where('locationUsers.location_id', $locationId)
+            ->whereIn('locationUsers.user_id', $userIds)
+            ->pluck('roles.role_name')
+            ->unique()
+            ->toArray();
+
+        // Delete users from location
+        LocationUsers::where('location_id', $locationId)
+            ->whereIn('user_id', $userIds)
+            ->delete();
+
+        $rolesText = implode(', ', $roleNames);
+        $message = count($roleNames) > 1 
+            ? "Users with roles {$rolesText} removed from location successfully"
+            : "Users with role {$rolesText} removed from location successfully";
+
+        return response()->json(['message' => $message], 200);
+
+    } catch (Exception $e) {
+        return response()->json([
+            'message' => 'Failed to remove users from location',
+            'error'   => $e->getMessage(),
+        ], 500);
+    }
+}
 }
