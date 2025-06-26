@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Mail\SendPasswordMail;
 use App\Models\LocationUsers;
+use App\Models\Role;
 use App\Models\UnavailabilityModel;
 use App\Models\UserProfileModel;
 use App\Notifications\UnavailabilityResponseNotification;
@@ -309,21 +310,25 @@ class UserProfileController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Request $request, $id)
-    {
-        $user = UserProfileModel::find($id);
+   public function destroy(Request $request, $id)
+{
+    $user = UserProfileModel::find($id);
 
-        if (! $user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
-
-        $user->deletestatus = 1;
-        $user->deletedby    = $request->deletedby;
-        $user->deleted_at   = Carbon::now(); // or now() helper
-        $user->save();
-
-        return response()->json(['message' => 'User soft-deleted successfully']);
+    if (! $user) {
+        return response()->json(['message' => 'User not found'], 404);
     }
+
+    // Fetch role name
+    $role = Role::find($user->role_id); // Or use relationship if defined
+    $roleName = $role ? $role->role_name : 'User';
+
+    $user->deletestatus = 1;
+    $user->deletedby    = $request->deletedby;
+    $user->deleted_at   = Carbon::now();
+    $user->save();
+
+    return response()->json(['message' => "{$roleName} soft-deleted successfully"]);
+}
 
     public function getnotifications(Request $request)
     {
