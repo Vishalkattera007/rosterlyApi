@@ -44,173 +44,6 @@ class UnavailabilityController extends Controller
         }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    // public function store(Request $request, $id = null)
-    // {
-    //     try {
-    //         if ($id != 2) {
-
-    //             if ($request->fromDT == null || $request->toDT == null) {
-    //                 $requestFromDT = null;
-    //                 $requestToDT   = null;
-    //             } else {
-    //                 $requestFromDT = Carbon::parse($request->fromDT)->format('Y-m-d h:i A');
-    //                 $requestToDT   = Carbon::parse($request->toDT)->format('Y-m-d h:i A');
-    //             }
-
-    //             $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
-    //                 ->get(['fromDT', 'toDT']);
-
-    //             foreach ($unavailDetails as $unavailDetail) {
-    //                 $existingFromDT = Carbon::parse($unavailDetail->fromDT)->format('Y-m-d h:i A');
-    //                 $existingToDT   = Carbon::parse($unavailDetail->toDT)->format('Y-m-d h:i A');
-
-    //                 if ($requestFromDT === $existingFromDT && $requestToDT === $existingToDT) {
-    //                     return response()->json([
-    //                         'message' => 'Unavailability already exists for the selected date & time range',
-    //                     ], 400);
-    //                 }
-    //             }
-
-    //             $statusMap = [
-    //                 'pending'  => 0,
-    //                 'approved' => 1,
-    //                 'rejected' => 2,
-    //             ];
-
-    //             $unavail                = new UnavailabilityModel();
-    //             $unavail->userId        = $request->userId;
-    //             $unavail->unavailType   = $id;
-    //             $unavail->day           = null;
-    //             $unavail->fromDT        = $requestFromDT;
-    //             $unavail->toDT          = $requestToDT;
-    //             $unavail->reason        = $request->reason;
-    //             $unavail->notifyTo      = $request->notifyTo;
-    //             $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
-
-    //             $unavail->save();
-
-    //             Log::info('Reccurring record saved successfully. ID: ' . $unavail->id);
-    //             // Send notification to the user
-    //             $notifyToUser = UserProfileModel::find($request->notifyTo);
-    //             $user         = UserProfileModel::find($request->userId);
-
-    //             if ($user) {
-    //                 $userName = $user->firstName . ' ' . $user->lastName;
-    //             } else {
-    //                 $userName = 'Unknown User';
-    //             }
-    //             if ($notifyToUser) {
-    //                 Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
-
-    //                 $notification = new UnavailabilityNotification([
-    //                     'title'     => 'Unavailability Notification',
-    //                     'userId'    => $request->userId,
-    //                     'userName'  => $userName,
-    //                     'fromDT'    => $request->fromDT,
-    //                     'toDT'      => $request->toDT,
-    //                     'reason'    => $request->reason,
-    //                     'unavailId' => $unavail->id,
-    //                 ]);
-
-    //                 $notifyToUser->notify($notification);
-    //                 Log::info("Notification sent to user ID: " . $notifyToUser->id);
-    //             } else {
-    //                 Log::warning('notifyTo user not found. ID: ' . $request->notifyTo);
-    //             }
-
-    //             return response()->json([
-    //                 'message' => 'Unavailability saved successfully',
-    //                 'data'    => $unavail,
-    //             ]);
-
-    //         } else {
-    //             // Reccuring Days Off
-    //             $unavailDetails = UnavailabilityModel::where('userId', $request->userId)
-    //                 ->get(['fromDT', 'toDT']);
-
-    //             foreach ($unavailDetails as $unavailDetail) {
-    //                 $requestFromTime = Carbon::parse($request->fromDT)->format('h:i A');
-    //                 $requestToTime   = Carbon::parse($request->toDT)->format('h:i A');
-
-    //                 $existingFromTime = Carbon::parse($unavailDetail->fromDT)->format('h:i A');
-    //                 $existingToTime   = Carbon::parse($unavailDetail->toDT)->format('h:i A');
-
-    //                 if (
-    //                     ($requestFromTime < $existingToTime) &&
-    //                     ($requestToTime > $existingFromTime)
-    //                 ) {
-    //                     return response()->json([
-    //                         'message' => 'Recurring unavailability already exists for the selected time range.',
-    //                     ], 400);
-    //                 }
-    //             }
-
-    //             $statusMap = [
-    //                 'pending'  => 0,
-    //                 'approved' => 1,
-    //                 'rejected' => 2,
-    //             ];
-
-    //             $unavail                = new UnavailabilityModel();
-    //             $unavail->userId        = $request->userId;
-    //             $unavail->unavailType   = $id;
-    //             $unavail->day           = $request->day;
-    //             $unavail->fromDT        = Carbon::parse($request->fromDT)->format('h:i A');
-    //             $unavail->toDT          = Carbon::parse($request->toDT)->format('h:i A');
-    //             $unavail->reason        = $request->reason;
-    //             $unavail->notifyTo      = $request->notifyTo;
-    //             $unavail->unavailStatus = $statusMap[$request->unavailStatus] ?? 0;
-
-    //             $unavail->save();
-
-    //             Log::info('Reccurring record saved successfully. ID: ' . $unavail->id);
-    //             // Send notification to the user
-    //             $notifyToUser = UserProfileModel::find($request->notifyTo);
-    //             $user         = UserProfileModel::find($request->userId);
-
-    //             if ($user) {
-    //                 $userName = $user->firstName . ' ' . $user->lastName;
-    //             } else {
-    //                 $userName = 'Unknown User';
-    //             }
-
-    //             if ($notifyToUser) {
-    //                 Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
-
-    //                 $notification = new UnavailabilityNotification([
-    //                     'title'     => 'Recurring Notification',
-    //                     'userId'    => $request->userId,
-    //                     'userName'  => $userName, // correct: user making the request
-    //                     'fromDT'    => $request->fromDT,
-    //                     'toDT'      => $request->toDT,
-    //                     'reason'    => $request->reason,
-    //                     'unavailId' => $unavail->id,
-    //                 ]);
-
-    //                 $notifyToUser->notify($notification);
-    //                 Log::info("Notification sent to user ID: " . $notifyToUser->id);
-    //             } else {
-    //                 Log::warning('notifyTo user not found. ID: ' . $request->notifyTo);
-    //             }
-
-    //             return response()->json([
-    //                 'message' => 'Reccurring saved successfully',
-    //                 'data'    => $unavail,
-    //             ]);
-    //         }
-
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'message' => 'Failed to store unavailability',
-    //             'error'   => $e->getMessage(),
-    //         ], 500);
-    //     }
-
-    // }
-
     public function store(Request $request, $id = null)
     {
         try {
@@ -419,7 +252,11 @@ class UnavailabilityController extends Controller
 
         if ($notifyToUser) {
             Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
-            $notificationMessage = $userName . 'has submitted' . $title . ' ' . $request->fromDT . ' ' . $request->toDT;
+            $fromDT = Carbon::parse($request->fromDT)->format('d M Y h:i A');
+            $toDT = Carbon::parse($request->toDT)->format('d M Y h:i A');
+
+            $notificationMessage = $userName . ' has submitted ' . $title . ' from ' . $fromDT . ' to ' . $toDT;
+
             $notification        = new UnavailabilityNotification([
                 'title'     => $title,
                 'userId'    => $request->userId,
