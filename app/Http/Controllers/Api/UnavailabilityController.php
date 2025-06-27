@@ -244,37 +244,52 @@ class UnavailabilityController extends Controller
     // helper function to send notification
 
     protected function sendNotification($request, $unavail, $title, $email)
-    {
-        $notifyToUser = UserProfileModel::find($request->notifyTo);
-        $user         = UserProfileModel::find($request->userId);
+{
+    $notifyToUser = UserProfileModel::find($request->notifyTo);
+    $user = UserProfileModel::find($request->userId);
 
-        $userName = $user ? $user->firstName . ' ' . $user->lastName : 'Unknown User';
+    $userName = $user ? $user->firstName . ' ' . $user->lastName : 'Unknown User';
 
-        if ($notifyToUser) {
-            Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
-            $fromDT = Carbon::parse($request->fromDT)->format('d M Y h:i A');
-            $toDT = Carbon::parse($request->toDT)->format('d M Y h:i A');
+    if ($notifyToUser) {
+        Log::info('Found notifyTo user with ID: ' . $notifyToUser->id);
 
-            $notificationMessage = $userName . ' has submitted ' . $title . ' from ' . $fromDT . ' to ' . $toDT;
+        // Format the date/time if they exist
+        $fromDT = $request->fromDT ? Carbon::parse($request->fromDT)->format('d M Y h:i A') : null;
+        $toDT = $request->toDT ? Carbon::parse($request->toDT)->format('d M Y h:i A') : null;
+        $day = $request->day ?? null;
 
-            $notification        = new UnavailabilityNotification([
-                'title'     => $title,
-                'userId'    => $request->userId,
-                'userName'  => $userName,
-                'fromDT'    => $request->fromDT,
-                'toDT'      => $request->toDT,
-                'reason'    => $request->reason,
-                'unavailId' => $unavail->id,
-                'day'       => $request->day,
-            ]);
+        $notificationMessage = $userName . ' has submitted ' . $title .
+            ($day ? ' for ' . $day : '') .
+            ($fromDT && $toDT ? ' from ' . $fromDT . ' to ' . $toDT : '');
 
-            
-            $notifyToUser->notify($notification);
-            Mail::to($email)->send(new SendNotificationsMail($notificationMessage));
-            Log::info("Notification sent to user ID: " . $notifyToUser->id);
-        } else {
-            Log::warning('notifyTo user not found. ID: ' . $request->notifyTo);
-        }
+        // Laravel database & broadcast notification
+        $notification = new UnavailabilityNotification([
+            'title'     => $title,
+            'userId'    => $request->userId,
+            'userName'  => $userName,
+            'fromDT'    => $request->fromDT,
+            'toDT'      => $request->toDT,
+            'reason'    => $request->reason,
+            'unavailId' => $unavail->id,
+            'day'       => $day,
+        ]);
+
+        $notifyToUser->notify($notification);
+
+        // Email notification with all data
+        Mail::to($email)->send(new SendNotificationsMail([
+            'title'    => $title,
+            'userName' => $userName,
+            'fromDT'   => $fromDT,
+            'toDT'     => $toDT,
+            'reason'   => $request->reason ?? '',
+            'day'      => $day,
+        ]));
+
+        Log::info("Notification sent to user ID: " . $notifyToUser->id);
+    } else {
+        Log::warning('notifyTo user not found. ID: ' . $request->notifyTo);
     }
+}
 
 }

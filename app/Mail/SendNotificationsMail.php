@@ -12,15 +12,24 @@ class SendNotificationsMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public string $notificationMessage;
+    public string $title;
+    public string $userName;
+    public string $fromDT;
+    public string $toDT;
+    public string $reason;
+    public string|null $day; // nullable
 
     /**
      * Create a new message instance.
      */
-    public function __construct(string $notificationMessage)
+    public function __construct($data)
     {
-        //
-        $this->notificationMessage = $notificationMessage;
+        $this->title    = $data['title'];
+        $this->userName = $data['userName'];
+        $this->fromDT   = $data['fromDT'] ?? null;
+        $this->toDT     = $data['toDT'] ?? null;
+        $this->reason   = $data['reason'] ?? 'No reason provided';
+        $this->day      = $data['day'] ?? null;
     }
 
     /**
@@ -29,7 +38,7 @@ class SendNotificationsMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Rosterly Uavailability Notification',
+            subject: 'Rosterly Unavailability Notification',
         );
     }
 
@@ -43,11 +52,6 @@ class SendNotificationsMail extends Mailable
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
     public function attachments(): array
     {
         return [];
