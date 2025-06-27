@@ -40,7 +40,7 @@ class UserProfileController extends Controller
         if ($id != null) {
             $userProfile = UserProfileModel::with('locationUsers')
                 ->where('id', $id)
-                // ->where('status', 1)
+            // ->where('status', 1)
                 ->where('deletestatus', 0)
                 ->first();
 
@@ -217,9 +217,16 @@ class UserProfileController extends Controller
             // Handle password
             $password = $request->filled('password') ? Hash::make($request->password) : $user->password;
 
-            // Full update
+            $requestedRoleId = $request->input('role_id', $user->role_id);
+            $created_by      = $request->input('created_by', $user->created_by);
+
+// Override if the updated role is manager
+            if ((int) $requestedRoleId === 2) {
+                $created_by = 1;
+            }
+
             $user->update([
-                'role_id'        => $request->input('role_id', $user->role_id),
+                'role_id'        => $requestedRoleId,
                 'firstName'      => $request->input('firstName', $user->firstName),
                 'lastName'       => $request->input('lastName', $user->lastName),
                 'email'          => $request->input('email', $user->email),
@@ -230,6 +237,7 @@ class UserProfileController extends Controller
                 'payrate'        => $request->input('payrate', $user->payrate),
                 'payratePercent' => $request->input('payratePercent', $validatePayratePercent),
                 'profileImage'   => $path,
+                'created_by'     => $created_by,
                 'updated_by'     => $request->input('updated_by', $user->updated_by),
                 'updated_at'     => now(),
             ]);
