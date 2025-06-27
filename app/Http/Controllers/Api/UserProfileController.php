@@ -40,7 +40,7 @@ class UserProfileController extends Controller
         if ($id != null) {
             $userProfile = UserProfileModel::with('locationUsers')
                 ->where('id', $id)
-                ->where('status', 1)
+                // ->where('status', 1)
                 ->where('deletestatus', 0)
                 ->first();
 
