@@ -35,36 +35,54 @@ class UserProfileController extends Controller
         ]);
     }
 
-   public function index($id = null)
-{
-    if ($id != null) {
-        $userProfile = UserProfileModel::where('id', $id)
-            ->where('status', 1)
-            ->where('deletestatus', 0)
-            ->first();
+    public function index($id = null)
+    {
+        if ($id != null) {
+            $userProfile = UserProfileModel::with('locationUsers')
+                ->where('id', $id)
+                ->where('status', 1)
+                ->where('deletestatus', 0)
+                ->first();
 
-        if (! $userProfile) {
+            if ($userProfile) {
+                $userArray = $userProfile->toArray();
+
+                if (! empty($userArray['location_users'])) {
+                    $userArray['location_id'] = $userArray['location_users']['location_id'];
+                } else {
+                    $userArray['location_id'] = null;
+                }
+
+                unset($userArray['location_users']);
+
+                return response()->json($userArray);
+            }
+
             return response()->json([
                 'message' => 'User not found',
             ], 404);
+        } else {
+            $findAllUsers = UserProfileModel::with('locationUsers')
+                ->where('status', 1)
+                ->where('deletestatus', 0)
+                ->get()
+                ->map(function ($user) {
+                    $userArray = $user->toArray();
+
+                    $userArray['location_id'] = ! empty($userArray['location_users'])
+                    ? $userArray['location_users']['location_id']
+                    : null;
+
+                    unset($userArray['location_users']);
+                    return $userArray;
+                });
+
+            return response()->json([
+                'message' => 'User profile list',
+                'data'    => $findAllUsers,
+            ]);
         }
-
-        return response()->json([
-            'message' => 'User Profile found',
-            'data'    => $userProfile,
-        ]);
-    } else {
-        $findAllUsers = UserProfileModel::where('status', 1)
-            ->where('deletestatus', 0)
-            ->get();
-
-        return response()->json([
-            'message' => 'User profile list',
-            'data'    => $findAllUsers,
-        ]);
     }
-}
-
 
     /**
      * Store a newly created resource in storage.
@@ -118,10 +136,8 @@ class UserProfileController extends Controller
             // Get role name
             $roleName = optional($userCreate->role)->role_name ?? 'Role';
 
-
             // Send generated password to user via email
             Mail::to($request->email)->send(new SendPasswordMail($generatedPassword, $request->firstName));
-
 
             return response()->json([
                 'message' => "{$roleName} created and a confirmation email has been sent to the user's email address.",
@@ -277,7 +293,7 @@ class UserProfileController extends Controller
                         'id'        => $user->id,
                         'firstName' => $user->firstName,
                         'lastName'  => $user->lastName,
-                        'roleId' => $user->role_id
+                        'roleId'    => $user->role_id,
                         // Add more fields as needed
                     ];
                 });
@@ -319,25 +335,25 @@ class UserProfileController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-   public function destroy(Request $request, $id)
-{
-    $user = UserProfileModel::find($id);
+    public function destroy(Request $request, $id)
+    {
+        $user = UserProfileModel::find($id);
 
-    if (! $user) {
-        return response()->json(['message' => 'User not found'], 404);
+        if (! $user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+                                                // Fetch role name
+        $role     = Role::find($user->role_id); // Or use relationship if defined
+        $roleName = $role ? $role->role_name : 'User';
+
+        $user->deletestatus = 1;
+        $user->deletedby    = $request->deletedby;
+        $user->deleted_at   = Carbon::now();
+        $user->save();
+
+        return response()->json(['message' => "{$roleName} soft-deleted successfully"]);
     }
-
-    // Fetch role name
-    $role = Role::find($user->role_id); // Or use relationship if defined
-    $roleName = $role ? $role->role_name : 'User';
-
-    $user->deletestatus = 1;
-    $user->deletedby    = $request->deletedby;
-    $user->deleted_at   = Carbon::now();
-    $user->save();
-
-    return response()->json(['message' => "{$roleName} soft-deleted successfully"]);
-}
 
     public function getnotifications(Request $request)
     {
