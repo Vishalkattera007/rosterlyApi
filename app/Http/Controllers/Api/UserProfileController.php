@@ -277,7 +277,7 @@ class UserProfileController extends Controller
                     ->pluck('user_id')
                     ->toArray(); //[15,22]
 
-                $users = UserProfileModel::with('location')
+                $users = UserProfileModel::with('locationUsers')
                     ->whereNotIn('id', $excludedUserIds)->where('created_by', $loginId)
                     ->get();
 
@@ -304,7 +304,7 @@ class UserProfileController extends Controller
                     'data'    => $customData,
                 ]);
             } else {
-                $query = UserProfileModel::with('location')
+                $query = UserProfileModel::with('locationUsers')
                     ->where('created_by', $loginId);
 
                 $users = $query->get();
@@ -316,9 +316,20 @@ class UserProfileController extends Controller
                     ], 404);
                 }
 
+// Transform users to flatten location_id
+                $transformedUsers = $users->map(function ($user) {
+                    $userArray                = $user->toArray();
+                    $userArray['location_id'] = ! empty($userArray['location_users'])
+                    ? $userArray['location_users']['location_id']
+                    : null;
+
+                    unset($userArray['location_users']);
+                    return $userArray;
+                });
+
                 return response()->json([
                     'message' => 'Users fetched successfully.',
-                    'data'    => $users,
+                    'data'    => $transformedUsers,
                     'status'  => true,
                 ]);
             }
