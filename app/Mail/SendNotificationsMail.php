@@ -14,15 +14,15 @@ class SendNotificationsMail extends Mailable
 
     public string $title;
     public string $userName;
-    public string $fromDT;
-    public string $toDT;
+    public ?string $fromDT;
+    public ?string $toDT;
     public string $reason;
-    public string|null $day; // nullable
+    public ?string $day;
 
     /**
      * Create a new message instance.
      */
-    public function __construct($data)
+    public function __construct(array $data)
     {
         $this->title    = $data['title'];
         $this->userName = $data['userName'];
@@ -32,9 +32,6 @@ class SendNotificationsMail extends Mailable
         $this->day      = $data['day'] ?? null;
     }
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
         return new Envelope(
@@ -42,9 +39,6 @@ class SendNotificationsMail extends Mailable
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
         return new Content(
@@ -57,3 +51,4 @@ class SendNotificationsMail extends Mailable
         return [];
     }
 }
+
