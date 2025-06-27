@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\DownloadRosterPdf;
 use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\LocationSalesController;
+use App\Http\Controllers\Api\LocationUser;
 use App\Http\Controllers\Api\RolesController;
 use App\Http\Controllers\Api\RosterAttendanceController;
 use App\Http\Controllers\Api\RosterController;
@@ -74,6 +75,8 @@ Route::middleware('apiauth')->group(function () {
         Route::post('/{locationId}/users', [LocationController::class, 'postUsersinLocation']);
         Route::put('/{locationId}/users/', [LocationController::class, 'updateUsersLocation']);
         Route::delete('/{locationId}/users/', [LocationController::class, 'deleteUserFromLocation']);
+        Route::get('/{locationId}/active-users', [LocationUser::class, 'getActiveUsersByLocation']);
+
     });
 
     Route::post('/generatepdf', [DownloadRosterPdf::class, 'downloadRosterPDF']);
