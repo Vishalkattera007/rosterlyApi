@@ -18,7 +18,7 @@
             <li><strong>From:</strong> {{ $fromDT }}</li>
             <li><strong>To:</strong> {{ $toDT }}</li>
         @endif
-        <li><strong>Reason:</strong> {{ $reason }}</li>
+            <li><strong>Reason:</strong> {{ empty($reason) ? 'No reason' : $reason }}</li>
     </ul>
 
     <p>Please login to your dashboard to approve or deny the request.</p>
