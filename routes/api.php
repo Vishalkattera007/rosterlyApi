@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ChangePasswordController;
+use App\Http\Controllers\Api\CompanyMasterController;
 use App\Http\Controllers\Api\DownloadRosterPdf;
 use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\LocationController;
@@ -32,6 +33,16 @@ Route::get('dashboardCards',[RosterController::class, 'dashboardCards']);
 Route::get('dashboardData',[RosterController::class, 'dashboardData']);
 Route::post('/attendance/log', [RosterAttendanceController::class, 'logAction']);
 Route::get('/attendance/logs', [RosterAttendanceController::class, 'getActions']);
+
+// Company Master Routes
+Route::prefix('/company')->group(function () {
+    Route::get('/', [CompanyMasterController::class, 'getCompanyDetails']);
+    Route::post('/', [CompanyMasterController::class, 'updateCompanyDetails']);
+    Route::post('/create', [CompanyMasterController::class, 'createCompany']);
+    Route::put('/{id}', [CompanyMasterController::class, 'updateCompany']);
+    Route::delete('/{id}', [CompanyMasterController::class, 'deleteCompany']);
+    Route::get('/{id}', [CompanyMasterController::class, 'showCompany']);
+});
 
 
 Route::middleware('apiauth')->group(function () {

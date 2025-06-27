@@ -22,6 +22,7 @@ class UserProfileModel extends Authenticatable
         'payrate',
         'payratePercent',
         'profileImage',
+        'company_id', // f - company_master
         'created_by',
         'created_at',
         'updated_by',
@@ -41,6 +42,10 @@ class UserProfileModel extends Authenticatable
     public function location()
     {
         return $this->belongsTo(LocationModel::class, 'location_id', 'id');
+    }
+
+    public function locationUsers(){
+        return $this->belongsTo(LocationUsers::class, 'id', 'user_id');
     }
     public function unavailability()
     {
@@ -69,5 +74,5 @@ class UserProfileModel extends Authenticatable
         $locationIds = $this->getLocationIdsAttribute();
         return LocationModel::whereIn('id', $locationIds)->get();
     }
-    
+
 }
