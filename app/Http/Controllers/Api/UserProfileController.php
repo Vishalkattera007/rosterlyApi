@@ -76,7 +76,7 @@ class UserProfileController extends Controller
             $validatePayratePercent = $request->payratePercent ?? 0;
             if ($validatePayratePercent < 0 || $validatePayratePercent > 100) {
                 return response()->json([
-                    'message' => "Pay rate percent must be between 0 and 100",
+                    'message' => "Pay rate percent must be between </br>0 and 100",
                     'status'  => false,
                 ], 400);
             }
