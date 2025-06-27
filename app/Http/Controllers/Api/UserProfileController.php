@@ -63,7 +63,6 @@ class UserProfileController extends Controller
             ], 404);
         } else {
             $findAllUsers = UserProfileModel::with('locationUsers')
-                ->where('status', 1)
                 ->where('deletestatus', 0)
                 ->get()
                 ->map(function ($user) {
