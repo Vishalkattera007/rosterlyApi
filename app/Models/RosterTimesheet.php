@@ -14,6 +14,7 @@ class RosterTimesheet extends Model
     protected $fillable = [
         'user_id',
         'roster_id',
+        'location_id',
         'date',
         'start_time',
         'end_time',
