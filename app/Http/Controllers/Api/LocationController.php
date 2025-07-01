@@ -134,8 +134,7 @@ class LocationController extends Controller
         ]);
     }
 
-
-   // In your Controller
+    // In your Controller
 // public function getUserIdsByLocation($locationId, Request $request)
 // {
 //     try {
@@ -154,7 +153,6 @@ class LocationController extends Controller
 //     }
 // }
 
-
     // fetch employee based on location id
     public function getUsersByLocation($locationId, Request $request)
     {
@@ -163,7 +161,21 @@ class LocationController extends Controller
 
             $fetchRole = $loggedInUser->role_id;
 
-            $query        = LocationUsers::with(['user',
+            if ($fetchRole===1) {
+                $query = LocationUsers::with(['user',
+                    'unavail' => function ($q) {
+                        $q->where('unavailStatus', 1);
+                    },
+                ])->where('location_id', $locationId);
+            } else {
+                $query = LocationUsers::with(['user',
+                    'unavail' => function ($q) {
+                        $q->where('unavailStatus', 1);
+                    },
+                ])->where('location_id', $locationId)->where('created_by', $loggedInUser->id);
+            }
+
+            $query = LocationUsers::with(['user',
                 'unavail' => function ($q) {
                     $q->where('unavailStatus', 1);
                 },
@@ -226,19 +238,17 @@ class LocationController extends Controller
                             // 'updated_by'  => Auth::id(),
                         ]);
                     }
-                      // Get role name (assuming you have a relationship or mapping)
-                    $roleName = $user->role->role_name ?? 'Unknown'; // or use RoleModel::find($user->role_id)->name
+                                                                            // Get role name (assuming you have a relationship or mapping)
+                    $roleName        = $user->role->role_name ?? 'Unknown'; // or use RoleModel::find($user->role_id)->name
                     $assignedRoles[] = $roleName;
                 }
                 // Append role name to the list
-            
+
             }
-            
 
-           return response()->json([
-            'message' => implode(', ', $assignedRoles) . ' assigned to location successfully'
-        ], 200);
-
+            return response()->json([
+                'message' => implode(', ', $assignedRoles) . ' assigned to location successfully',
+            ], 200);
 
         } catch (Exception $e) {
             return response()->json(['message' => 'Failed to assign users to location', 'error' => $e->getMessage()], 500);
@@ -289,40 +299,40 @@ class LocationController extends Controller
     }
 
     public function deleteUserFromLocation(Request $request, $locationId)
-{
-    try {
-        $userIds = $request->input('user_ids', []);
+    {
+        try {
+            $userIds = $request->input('user_ids', []);
 
-        if (empty($userIds)) {
-            return response()->json(['message' => 'No user IDs provided'], 400);
-        }
+            if (empty($userIds)) {
+                return response()->json(['message' => 'No user IDs provided'], 400);
+            }
 
-        // Get unique role names from location_users -> roles
-        $roleNames = DB::table('locationUsers')
-            ->join('roles', 'locationUsers.role', '=', 'roles.id')
-            ->where('locationUsers.location_id', $locationId)
-            ->whereIn('locationUsers.user_id', $userIds)
-            ->pluck('roles.role_name')
-            ->unique()
-            ->toArray();
+            // Get unique role names from location_users -> roles
+            $roleNames = DB::table('locationUsers')
+                ->join('roles', 'locationUsers.role', '=', 'roles.id')
+                ->where('locationUsers.location_id', $locationId)
+                ->whereIn('locationUsers.user_id', $userIds)
+                ->pluck('roles.role_name')
+                ->unique()
+                ->toArray();
 
-        // Delete users from location
-        LocationUsers::where('location_id', $locationId)
-            ->whereIn('user_id', $userIds)
-            ->delete();
+            // Delete users from location
+            LocationUsers::where('location_id', $locationId)
+                ->whereIn('user_id', $userIds)
+                ->delete();
 
-        $rolesText = implode(', ', $roleNames);
-        $message = count($roleNames) > 1 
+            $rolesText = implode(', ', $roleNames);
+            $message   = count($roleNames) > 1
             ? "{$rolesText} removed from location successfully"
             : "{$rolesText} removed from location successfully";
 
-        return response()->json(['message' => $message], 200);
+            return response()->json(['message' => $message], 200);
 
-    } catch (Exception $e) {
-        return response()->json([
-            'message' => 'Failed to remove users from location',
-            'error'   => $e->getMessage(),
-        ], 500);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed to remove users from location',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
-}
 }

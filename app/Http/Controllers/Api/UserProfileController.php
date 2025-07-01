@@ -298,13 +298,6 @@ class UserProfileController extends Controller
                     ->get();
                 }
 
-
-
-
-                $users = UserProfileModel::with('locationUsers')
-                    ->whereNotIn('id', $excludedUserIds)->where('created_by', $loginId)
-                    ->get();
-
                 if ($users->isEmpty()) {
                     return response()->json([
                         'message' => 'No users found outside this location.',
@@ -326,6 +319,7 @@ class UserProfileController extends Controller
                     'message' => 'Users fetched successfully.',
                     'status'  => true,
                     'data'    => $customData,
+                    'roleNagaraj' =>  $roleId  
                 ]);
             } else {
                 $query = UserProfileModel::with('locationUsers')
