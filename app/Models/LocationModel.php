@@ -20,8 +20,13 @@ class LocationModel extends Model
     protected $table = 'locations';
 
     public function locations()
-{
-    $locationIds = $this->getLocationIdsAttribute(); // explode CSV
-    return LocationModel::whereIn('id', $locationIds)->get();
-}
+    {
+        $locationIds = $this->getLocationIdsAttribute(); // explode CSV
+        return LocationModel::whereIn('id', $locationIds)->get();
+    }
+
+    // public function locationUsers()
+    // {
+    //     return $this->hasMany(locationUsers::class, 'id','location_id');
+    // }
 }

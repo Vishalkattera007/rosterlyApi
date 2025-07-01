@@ -16,10 +16,21 @@ class LocationController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $locations = LocationModel::all();
+
+            $loginId = $request->user('api')->id;
+            $roleId = $request->user('api')->role_id;
+
+            if ($roleId === 1) {
+                $locations = LocationModel::all();
+            } else {
+                $location_ids = LocationUsers::where('user_id', $loginId)->pluck('location_id');
+                $locations = LocationModel::whereIn('id', $location_ids)->get();
+            }
+
+            // $locations = LocationModel::all();
             return response()->json($locations);
         } catch (Exception $e) {
             return response()->json(['message' => 'Failed to fetch locations', 'error' => $e->getMessage()], 500);
@@ -161,7 +172,7 @@ class LocationController extends Controller
 
             $fetchRole = $loggedInUser->role_id;
 
-            if ($fetchRole===1) {
+            if ($fetchRole === 1) {
                 $query = LocationUsers::with(['user',
                     'unavail' => function ($q) {
                         $q->where('unavailStatus', 1);
