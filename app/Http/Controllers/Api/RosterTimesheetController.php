@@ -20,6 +20,7 @@ class RosterTimesheetController extends Controller
         $timesheet = RosterTimesheet::create([
             'user_id'       => $request->user_id,
             'roster_id'     => $request->roster_id,
+            'location_id'  =>  $request->location,
             'date'          => $request->date,
             'start_time'    => $request->start_time,    // Format: HH:MM:SS
             'end_time'      => $request->end_time,      // Format: HH:MM:SS
