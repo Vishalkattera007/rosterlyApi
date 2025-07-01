@@ -21,13 +21,13 @@ class LocationController extends Controller
         try {
 
             $loginId = $request->user('api')->id;
-            $roleId = $request->user('api')->role_id;
+            $roleId  = $request->user('api')->role_id;
 
             if ($roleId === 1) {
                 $locations = LocationModel::all();
             } else {
                 $location_ids = LocationUsers::where('user_id', $loginId)->pluck('location_id');
-                $locations = LocationModel::whereIn('id', $location_ids)->get();
+                $locations    = LocationModel::whereIn('id', $location_ids)->get();
             }
 
             // $locations = LocationModel::all();
@@ -173,20 +173,24 @@ class LocationController extends Controller
             $fetchRole = $loggedInUser->role_id;
 
             if ($fetchRole === 1) {
-                $query = LocationUsers::with(['user',
+                $users = LocationUsers::with(['user',
                     'unavail' => function ($q) {
                         $q->where('unavailStatus', 1);
                     },
-                ])->where('location_id', $locationId);
+                ])->where('location_id', $locationId)->get();
             } else {
-                $query = LocationUsers::with(['user',
+
+                $getLoggedInUserLocation = LocationUsers::where('user_id', $loggedInUser->id)
+                    ->pluck('location_id');
+
+                $users = LocationUsers::with(['user',
                     'unavail' => function ($q) {
                         $q->where('unavailStatus', 1);
                     },
-                ])->where('location_id', $locationId)->where('created_by', $loggedInUser->id);
+                ])->whereIn('location_id', $getLoggedInUserLocation)->get()->unique('user_id')->values();
             }
 
-            $users = $query->get();
+            // $users = $query->get();
 
             if ($users->isEmpty()) {
                 return response()->json([

@@ -535,7 +535,15 @@ class UserProfileController extends Controller
 
         $getUsersData = LocationUsers::with('user')->whereIn('location_id', $getLoggedInUserLocation)
             ->get();
-        $users = $getUsersData->pluck('user')->unique('id')->values();
+        $users = $getUsersData
+            ->pluck('user')
+            ->map(function ($user, $key) use ($getUsersData) {
+                $user->location_id = $getUsersData[$key]->location_id ?? null;
+                return $user;
+            })
+            ->where('deletestatus', 0) // Optional: only active users
+            ->unique('id')             // Remove duplicates
+            ->values();
 
         return response()->json([
             'message' => 'Managers fetched successfully',
