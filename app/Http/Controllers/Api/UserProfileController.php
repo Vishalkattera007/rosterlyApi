@@ -546,7 +546,7 @@ class UserProfileController extends Controller
             ->values();
 
         return response()->json([
-            'message' => 'Managers fetched successfully',
+            'message' => 'Employees fetched successfully',
             'data'    => $users,
         ]);
 

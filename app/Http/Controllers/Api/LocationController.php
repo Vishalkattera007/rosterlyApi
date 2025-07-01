@@ -171,6 +171,7 @@ class LocationController extends Controller
             $loggedInUser = $request->user('api');
 
             $fetchRole = $loggedInUser->role_id;
+            $pageName  = $request->pageName;
 
             if ($fetchRole === 1) {
                 $users = LocationUsers::with(['user',
@@ -183,11 +184,28 @@ class LocationController extends Controller
                 $getLoggedInUserLocation = LocationUsers::where('user_id', $loggedInUser->id)
                     ->pluck('location_id');
 
-                $users = LocationUsers::with(['user',
-                    'unavail' => function ($q) {
-                        $q->where('unavailStatus', 1);
-                    },
-                ])->whereIn('location_id', $getLoggedInUserLocation)->get()->unique('user_id')->values();
+                if ($pageName == "rosters") {
+                    $users = LocationUsers::with([
+                        'user',
+                        'unavail' => function ($q) {
+                            $q->where('unavailStatus', 1);
+                        },
+                    ])
+                        ->whereIn('location_id', $getLoggedInUserLocation)
+                        ->whereHas('user', function ($q) {
+                            $q->where('role_id', 3); // ✅ Only fetch users with role_id = 3
+                        })
+                        ->get()
+                        ->unique('user_id')
+                        ->values();
+                } else {
+                    $users = LocationUsers::with(['user',
+                        'unavail' => function ($q) {
+                            $q->where('unavailStatus', 1);
+                        },
+                    ])->whereIn('location_id', $getLoggedInUserLocation)->get()->unique('user_id')->values();
+                }
+
             }
 
             // $users = $query->get();
