@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\LocationUser;
 use App\Http\Controllers\Api\RolesController;
 use App\Http\Controllers\Api\RosterAttendanceController;
 use App\Http\Controllers\Api\RosterController;
+use App\Http\Controllers\Api\RosterTimesheetController;
 use App\Http\Controllers\Api\UnavailabilityController;
 use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Support\Facades\Route;
@@ -33,6 +34,7 @@ Route::get('dashboardCards',[RosterController::class, 'dashboardCards']);
 Route::get('dashboardData',[RosterController::class, 'dashboardData']);
 Route::post('/attendance/log', [RosterAttendanceController::class, 'logAction']);
 Route::get('/attendance/logs', [RosterAttendanceController::class, 'getActions']);
+Route::post('/generatetimesheet', [RosterTimesheetController::class, 'store']);
 
 // Company Master Routes
 Route::prefix('/company')->group(function () {
