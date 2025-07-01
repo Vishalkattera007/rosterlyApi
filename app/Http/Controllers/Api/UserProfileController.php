@@ -281,21 +281,21 @@ class UserProfileController extends Controller
         try {
 
             $loginId = $request->user('api')->id;
-            $roleId = $request->user('api')->role_id;
+            $roleId  = $request->user('api')->role_id;
 
             if ($location_id !== null) {
                 $excludedUserIds = LocationUsers::where('location_id', $location_id)
                     ->pluck('user_id')
                     ->toArray(); //[15,22]
 
-                if($roleId === 1) {
-                      $users = UserProfileModel::with('locationUsers')
-                    ->whereNotIn('id', $excludedUserIds)
-                    ->get();
-                }else{
-                     $users = UserProfileModel::with('locationUsers')
-                    ->whereNotIn('id', $excludedUserIds)->where('created_by', $loginId)
-                    ->get();
+                if ($roleId === 1) {
+                    $users = UserProfileModel::with('locationUsers')
+                        ->whereNotIn('id', $excludedUserIds)
+                        ->get();
+                } else {
+                    $users = UserProfileModel::with('locationUsers')
+                        ->whereNotIn('id', $excludedUserIds)->where('created_by', $loginId)
+                        ->get();
                 }
 
                 if ($users->isEmpty()) {
@@ -316,10 +316,10 @@ class UserProfileController extends Controller
                 });
 
                 return response()->json([
-                    'message' => 'Users fetched successfully.',
-                    'status'  => true,
-                    'data'    => $customData,
-                    'roleNagaraj' =>  $roleId  
+                    'message'     => 'Users fetched successfully.',
+                    'status'      => true,
+                    'data'        => $customData,
+                    'roleNagaraj' => $roleId,
                 ]);
             } else {
                 $query = UserProfileModel::with('locationUsers')
@@ -523,6 +523,24 @@ class UserProfileController extends Controller
             }
 
         }
+
+    }
+
+    public function forManagers(Request $request)
+    {
+        $loginId = $request->user('api')->id;
+
+        $getLoggedInUserLocation = LocationUsers::where('user_id', $loginId)
+            ->pluck('location_id');
+
+        $getUsersData = LocationUsers::with('user')->whereIn('location_id', $getLoggedInUserLocation)
+            ->get();
+        $users = $getUsersData->pluck('user')->unique('id')->values();
+
+        return response()->json([
+            'message' => 'Managers fetched successfully',
+            'data'    => $users,
+        ]);
 
     }
 

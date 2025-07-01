@@ -55,6 +55,7 @@ Route::middleware('apiauth')->group(function () {
     Route::post('/changePassword', [ChangePasswordController::class, 'changePassword']);
 
     Route::prefix('/users')->group(function () {
+        Route::get('/manager/{id?}', [UserProfileController::class, 'forManagers']);
         Route::get('/{id?}', [UserProfileController::class, 'index']);
         Route::post('/', [UserProfileController::class, 'store'])->name('users.store');
         Route::post('{id}', [UserProfileController::class, 'update']);
