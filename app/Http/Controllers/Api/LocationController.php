@@ -175,12 +175,6 @@ class LocationController extends Controller
                 ])->where('location_id', $locationId)->where('created_by', $loggedInUser->id);
             }
 
-            $query = LocationUsers::with(['user',
-                'unavail' => function ($q) {
-                    $q->where('unavailStatus', 1);
-                },
-            ])->where('location_id', $locationId)->where('created_by', $loggedInUser->id);
-
             $users = $query->get();
 
             if ($users->isEmpty()) {
