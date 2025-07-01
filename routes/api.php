@@ -60,7 +60,7 @@ Route::middleware('apiauth')->group(function () {
         Route::post('{id}', [UserProfileController::class, 'update']);
         Route::delete('{id}', [UserProfileController::class, 'destroy']);
         Route::get('/role/{id}', [UserProfileController::class, 'show'])->name('users.show');
-        Route::get('/login/{loginId?}/{location_id?}', [UserProfileController::class, 'getUsersCreatedBy']);
+        Route::get('/login/{location_id?}', [UserProfileController::class, 'getUsersCreatedBy']);
         Route::post('/profile/{id}/status', [UserProfileController::class, 'updateStatus']);
     });
 

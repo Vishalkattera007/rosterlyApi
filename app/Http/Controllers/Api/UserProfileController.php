@@ -276,13 +276,30 @@ class UserProfileController extends Controller
         }
     }
 
-    public function getUsersCreatedBy(Request $request, $loginId = null, $location_id = null)
+    public function getUsersCreatedBy(Request $request, $location_id = null)
     {
         try {
+
+            $loginId = $request->user('api')->id;
+            $roleId = $request->user('api')->role_id;
+
             if ($location_id !== null) {
                 $excludedUserIds = LocationUsers::where('location_id', $location_id)
                     ->pluck('user_id')
                     ->toArray(); //[15,22]
+
+                if($roleId === 1) {
+                      $users = UserProfileModel::with('locationUsers')
+                    ->whereNotIn('id', $excludedUserIds)
+                    ->get();
+                }else{
+                     $users = UserProfileModel::with('locationUsers')
+                    ->whereNotIn('id', $excludedUserIds)->where('created_by', $loginId)
+                    ->get();
+                }
+
+
+
 
                 $users = UserProfileModel::with('locationUsers')
                     ->whereNotIn('id', $excludedUserIds)->where('created_by', $loginId)

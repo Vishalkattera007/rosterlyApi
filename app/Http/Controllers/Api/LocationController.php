@@ -162,20 +162,12 @@ class LocationController extends Controller
             $loggedInUser = $request->user('api');
 
             $fetchRole = $loggedInUser->role_id;
-            if ($fetchRole===1) {
-               $query        = LocationUsers::with(['user',
-                'unavail' => function ($q) {
-                    $q->where('unavailStatus', 1);
-                },
-            ])->where('location_id', $locationId);  
-            }
-            else {
-                $query        = LocationUsers::with(['user',
+
+            $query        = LocationUsers::with(['user',
                 'unavail' => function ($q) {
                     $q->where('unavailStatus', 1);
                 },
             ])->where('location_id', $locationId)->where('created_by', $loggedInUser->id);
-            }
 
             $users = $query->get();
 
