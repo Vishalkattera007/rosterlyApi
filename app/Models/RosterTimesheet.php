@@ -15,8 +15,10 @@ class RosterTimesheet extends Model
         'user_id',
         'roster_id',
         'date',
-        'total_work_minutes',
-        'total_break_minutes',
+        'start_time',
+        'end_time',
+        'break_minutes',
+        'shift_minutes'
     ];
 
     // Relationships (optional, if you want access to user/roster info)
