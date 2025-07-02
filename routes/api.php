@@ -35,6 +35,7 @@ Route::get('dashboardData',[RosterController::class, 'dashboardData']);
 Route::post('/attendance/log', [RosterAttendanceController::class, 'logAction']);
 Route::get('/attendance/logs', [RosterAttendanceController::class, 'getActions']);
 Route::post('/generatetimesheet', [RosterTimesheetController::class, 'store']);
+Route::get('/timesheet/weekly-summary', [RosterTimesheetController::class, 'getWeeklySummary']);
 
 // Company Master Routes
 Route::prefix('/company')->group(function () {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\RosterWeekModel;
 use Illuminate\Http\Request;
 use App\Models\RosterAttendanceLog;
 use App\Models\RosterTimesheet;
@@ -40,5 +41,82 @@ class RosterTimesheetController extends Controller
         ], 500);
     }
 }
+
+
+public function getWeeklySummary(Request $request)
+{
+    try {
+        $userId       = $request->query('user_id');
+        $locationId   = $request->query('location_id');
+        $weekId       = $request->query('roster_week_id');
+
+        // Get start and end dates for the week
+        $week = RosterWeekModel::where('id', $weekId)->where('location_id', $locationId)->first();
+
+        if (!$week) {
+            return response()->json(['status' => false, 'message' => 'Roster week not found'], 404);
+        }
+
+        $startDate = Carbon::parse($week->week_start_date);
+        $endDate   = Carbon::parse($week->week_end_date);
+        $period = CarbonPeriod::create($startDate, $endDate);
+
+        $result = [];
+
+        foreach ($period as $date) {
+            $day = $date->toDateString();
+
+            // Scheduled shift
+            $roster = RosterModel::where('user_id', $userId)
+                ->where('location_id', $locationId)
+                ->where('rosterWeekId', $weekId)
+                ->whereDate('date', $day)
+                ->first();
+
+            $scheduledShift = '—';
+            if ($roster && $roster->startTime && $roster->endTime) {
+                $start = Carbon::parse($roster->startTime)->format('h:i A');
+                $end = Carbon::parse($roster->endTime)->format('h:i A');
+                $scheduledShift = "$start - $end";
+            }
+
+            // Actual logged times
+            $timesheet = RosterTimesheet::where('user_id', $userId)
+                ->where('location_id', $locationId)
+                ->whereDate('date', $day)
+                ->first();
+
+            $actualStart = $actualEnd = $actualBreak = $actualWork = '—';
+
+            if ($timesheet) {
+                $actualStart  = $timesheet->start_time ?? '—';
+                $actualEnd    = $timesheet->end_time ?? '—';
+                $actualBreak  = $timesheet->break_minutes . ' mins';
+                $actualWork   = $timesheet->shift_minutes . ' mins';
+            }
+
+            $result[] = [
+                'date'             => $date->format('D, d/m'),
+                'scheduled_shift'  => $scheduledShift,
+                'actual_start'     => $actualStart,
+                'actual_end'       => $actualEnd,
+                'break_time'       => $actualBreak,
+                'actual_work_time' => $actualWork,
+            ];
+        }
+
+        return response()->json([
+            'status' => true,
+            'data'   => $result,
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Error: ' . $e->getMessage(),
+        ], 500);
+    }
+}
+
 
 }
