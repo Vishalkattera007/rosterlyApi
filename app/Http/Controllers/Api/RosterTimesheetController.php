@@ -135,7 +135,7 @@ public function downloadTimesheetPdf(Request $request)
     $employee = $request->employee;
     $week = $request->week;
     $rows = $request->data;
-    $location_id = $request->location_id;
+    $location_name = $request->location_name;
     $totalOvertime = $request->totalOvertime;
     $totalLessTime = $request->totalLessTime;
     $totalPay = $request->totalPay;
@@ -143,7 +143,7 @@ public function downloadTimesheetPdf(Request $request)
     $pdf = Pdf::loadView('pdf.timesheet', compact(
         'employee',
         'week',
-        'location_id',
+        'location_name',
         'rows',
         'totalOvertime',
         'totalLessTime',

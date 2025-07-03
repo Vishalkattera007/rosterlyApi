@@ -11,7 +11,7 @@
 <body>
     <h2>Timesheet Summary</h2>
     <p><strong>Employee:</strong> {{ $employee }}</p>
-    <p><strong>Location:</strong>{{$location_id}}</p>
+    <p><strong>Location:</strong>{{$location_name}}</p>
     <p><strong>Week:</strong> {{ $week }}</p>
 
     <table>
