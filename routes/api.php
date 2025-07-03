@@ -66,7 +66,11 @@ Route::middleware('apiauth')->group(function () {
         Route::post('/profile/{id}/status', [UserProfileController::class, 'updateStatus']);
     });
 
-    Route::get('/roles', [RolesController::class, 'index'])->name('roles.index');
+    Route::get('/roles', [RolesController::class, 'index'])->name('roles.index');         // List all roles
+    Route::post('/roles', [RolesController::class, 'store'])->name('roles.store');        // Create a new role
+    Route::get('/roles/{id}', [RolesController::class, 'show'])->name('roles.show');      // Get a single role
+    Route::put('/roles/{id}', [RolesController::class, 'update'])->name('roles.update');  // Update a role
+    Route::delete('/roles/{id}', [RolesController::class, 'destroy'])->name('roles.destroy'); // Delete a role
 
     Route::prefix('/unavailability')->group(function () {
         Route::get('/login/{id?}', [UnavailabilityController::class, 'index'])->name('unavail.index');
@@ -95,5 +99,6 @@ Route::middleware('apiauth')->group(function () {
     });
 
     Route::get('/generatepdf', [DownloadRosterPdf::class, 'downloadRosterPDF']);
+    Route::post('/timesheet/download-pdf', [RosterTimesheetController::class, 'downloadTimesheetPdf']);
 
 });

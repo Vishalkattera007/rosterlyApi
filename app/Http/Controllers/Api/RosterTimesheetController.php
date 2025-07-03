@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\RosterWeekModel;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use App\Models\RosterAttendanceLog;
 use App\Models\RosterTimesheet;
@@ -126,6 +127,29 @@ public function getWeeklySummary(Request $request)
     }
 }
 
+
+// pdf generation
+
+public function downloadTimesheetPdf(Request $request)
+{
+    $employee = $request->employee;
+    $week = $request->week;
+    $rows = $request->data;
+    $totalOvertime = $request->totalOvertime;
+    $totalLessTime = $request->totalLessTime;
+    $totalPay = $request->totalPay;
+
+    $pdf = Pdf::loadView('pdf.timesheet', compact(
+        'employee',
+        'week',
+        'rows',
+        'totalOvertime',
+        'totalLessTime',
+        'totalPay'
+    ));
+
+    return $pdf->download("timesheet-$employee.pdf");
+}
 
 
 }
