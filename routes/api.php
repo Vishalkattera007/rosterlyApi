@@ -94,6 +94,6 @@ Route::middleware('apiauth')->group(function () {
 
     });
 
-    Route::post('/generatepdf', [DownloadRosterPdf::class, 'downloadRosterPDF']);
+    Route::get('/generatepdf', [DownloadRosterPdf::class, 'downloadRosterPDF']);
 
 });
