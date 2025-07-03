@@ -46,12 +46,14 @@ class RosterTimesheetController extends Controller
 public function getWeeklySummary(Request $request)
 {
     try {
-        $userId       = $request->query('user_id');
-        $locationId   = $request->query('location_id');
-        $weekId       = $request->query('roster_week_id');
+        $userId     = $request->query('user_id');
+        $locationId = $request->query('location_id');
+        $weekId     = $request->query('roster_week_id');
 
         // Get start and end dates for the week
-        $week = RosterWeekModel::where('id', $weekId)->where('location_id', $locationId)->first();
+        $week = RosterWeekModel::where('id', $weekId)
+            ->where('location_id', $locationId)
+            ->first();
 
         if (!$week) {
             return response()->json(['status' => false, 'message' => 'Roster week not found'], 404);
@@ -59,7 +61,7 @@ public function getWeeklySummary(Request $request)
 
         $startDate = Carbon::parse($week->week_start_date);
         $endDate   = Carbon::parse($week->week_end_date);
-        $period = CarbonPeriod::create($startDate, $endDate);
+        $period    = CarbonPeriod::create($startDate, $endDate);
 
         $result = [];
 
@@ -73,11 +75,16 @@ public function getWeeklySummary(Request $request)
                 ->whereDate('date', $day)
                 ->first();
 
-            $scheduledShift = '—';
+            $scheduledShift = $scheduledBreak = '—';
+
             if ($roster && $roster->startTime && $roster->endTime) {
                 $start = Carbon::parse($roster->startTime)->format('h:i A');
-                $end = Carbon::parse($roster->endTime)->format('h:i A');
+                $end   = Carbon::parse($roster->endTime)->format('h:i A');
                 $scheduledShift = "$start - $end";
+
+                if ($roster->breakTime) {
+                    $scheduledBreak = $roster->breakTime . ' mins';
+                }
             }
 
             // Actual logged times
@@ -91,17 +98,18 @@ public function getWeeklySummary(Request $request)
             if ($timesheet) {
                 $actualStart  = $timesheet->start_time ?? '—';
                 $actualEnd    = $timesheet->end_time ?? '—';
-                $actualBreak  = $timesheet->break_minutes . ' mins';
-                $actualWork   = $timesheet->shift_minutes . ' mins';
+                $actualBreak  = $timesheet->break_minutes ? $timesheet->break_minutes . ' mins' : '—';
+                $actualWork   = $timesheet->shift_minutes ? $timesheet->shift_minutes . ' mins' : '—';
             }
 
             $result[] = [
-                'date'             => $date->format('D, d/m'),
-                'scheduled_shift'  => $scheduledShift,
-                'actual_start'     => $actualStart,
-                'actual_end'       => $actualEnd,
-                'break_time'       => $actualBreak,
-                'actual_work_time' => $actualWork,
+                'date'              => $date->format('D, d/m'),
+                'scheduled_shift'   => $scheduledShift,
+                'scheduled_break'   => $scheduledBreak,
+                'actual_start'      => $actualStart,
+                'actual_end'        => $actualEnd,
+                'actual_break'      => $actualBreak,
+                'actual_work_time'  => $actualWork,
             ];
         }
 
@@ -117,6 +125,7 @@ public function getWeeklySummary(Request $request)
         ], 500);
     }
 }
+
 
 
 }
