@@ -11,7 +11,7 @@
 <body>
     <h2>Timesheet Summary</h2>
     <p><strong>Employee:</strong> {{ $employee }}</p>
-    <p><strong>Location:</strong>{{ $location_name}}</p>
+    <p><strong>Location:</strong> {{ $location_name }}</p>
     <p><strong>Week:</strong> {{ $week }}</p>
 
     <table>
@@ -44,6 +44,7 @@
     </table>
 
     <br><br>
+    <p><strong>Total Scheduled Hours:</strong> {{ $scheduledHours }}</p>
     <p><strong>Total Overtime Hours:</strong> {{ $totalOvertime }}</p>
     <p><strong>Total Less Time Hours:</strong> {{ $totalLessTime }}</p>
     <p><strong>Total Pay:</strong> <strong style="color: green">${{ $totalPay }}</strong></p>
