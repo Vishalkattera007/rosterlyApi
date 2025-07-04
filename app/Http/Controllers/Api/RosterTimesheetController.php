@@ -94,14 +94,26 @@ public function getWeeklySummary(Request $request)
                 ->whereDate('date', $day)
                 ->first();
 
-            $actualStart = $actualEnd = $actualBreak = $actualWork = '—';
+           $actualStart = $actualEnd = $actualBreak = $actualWork = '—';
 
             if ($timesheet) {
                 $actualStart  = $timesheet->start_time ?? '—';
                 $actualEnd    = $timesheet->end_time ?? '—';
                 $actualBreak  = $timesheet->break_minutes ? $timesheet->break_minutes . ' mins' : '—';
-                $actualWork   = $timesheet->shift_minutes ? $timesheet->shift_minutes . ' mins' : '—';
+
+                // Convert minutes to h & m format
+                if ($timesheet->shift_minutes) {
+                    $hours = floor($timesheet->shift_minutes / 60);
+                    $mins = $timesheet->shift_minutes % 60;
+                    $actualWork = ($hours > 0 ? $hours . 'h ' : '') . ($mins > 0 ? $mins . 'm' : '');
+                    if ($actualWork === '') {
+                        $actualWork = '0m';
+                    }
+                } else {
+                    $actualWork = '—';
+                }
             }
+
 
             $result[] = [
                 'date'              => $date->format('D, d/m'),
