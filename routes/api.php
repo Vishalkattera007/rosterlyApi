@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AttendanceLogController;
 use App\Http\Controllers\Api\ChangePasswordController;
 use App\Http\Controllers\Api\CompanyMasterController;
 use App\Http\Controllers\Api\DownloadRosterPdf;
@@ -49,6 +50,9 @@ Route::prefix('/company')->group(function () {
 
 
 Route::middleware('apiauth')->group(function () {
+
+    Route::get('/checklogs', [AttendanceLogController::class, 'index']);
+
     Route::get('/notifications', [UserProfileController::class, 'getNotifications']);
     Route::post('/notifications', [UserProfileController::class, 'markAllAsRead']);
 

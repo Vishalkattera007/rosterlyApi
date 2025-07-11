@@ -11,6 +11,27 @@ use Carbon\Carbon;
 
 class RosterAttendanceController extends Controller
 {
+
+    public function getAttendanceLog(){
+        try {
+            $logs = RosterAttendanceLog::with(['user', 'roster'])
+                ->orderBy('timestamp', 'desc')
+                ->get();
+
+            return response()->json([
+                'status' => true,
+                'data'   => $logs
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
     // Log attendance action (start, break_start, break_end, end)
     public function logAction(Request $request)
     {
@@ -41,7 +62,7 @@ class RosterAttendanceController extends Controller
     public function getActions(Request $request)
     {
         try {
-            $userId = $request->user_id;
+            $userId = $request->user('api')->id;
             $date = $request->date ?? Carbon::today()->toDateString();
 
             $logs = RosterAttendanceLog::where('user_id', $userId)
