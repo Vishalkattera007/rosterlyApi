@@ -290,11 +290,11 @@ class UserProfileController extends Controller
 
                 if ($roleId === 1) {
                     $users = UserProfileModel::with('locationUsers')
-                        ->whereNotIn('id', $excludedUserIds)
+                        ->whereNotIn('id', $excludedUserIds)->where('deletestatus', 0)
                         ->get();
                 } else {
                     $users = UserProfileModel::with('locationUsers')
-                        ->whereNotIn('id', $excludedUserIds)->where('created_by', $loginId)
+                        ->whereNotIn('id', $excludedUserIds)->where('created_by', $loginId)->where('deletestatus', 0)
                         ->get();
                 }
 
