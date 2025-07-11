@@ -139,7 +139,7 @@ class UserProfileController extends Controller
             Mail::to($request->email)->send(new SendPasswordMail($generatedPassword, $request->firstName));
 
             return response()->json([
-                'message' => "<h3>{$roleName} Created Successfully</h3><h5>A confirmation email has been sent to the user's email address.</h5>",
+                'message' => "<h3>{$roleName} Created</h3><h5>Confirmation email sent.</h5>",
                 'data'    => $userCreate,
                 'status'  => true,
             ], 201);
@@ -381,7 +381,7 @@ class UserProfileController extends Controller
         $user->deleted_at   = Carbon::now();
         $user->save();
 
-        return response()->json(['message' => "{$roleName} soft-deleted successfully"]);
+        return response()->json(['message' => "{$roleName} deleted successfully"]);
     }
 
     public function getnotifications(Request $request)
