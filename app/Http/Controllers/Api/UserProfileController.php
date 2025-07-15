@@ -67,11 +67,9 @@ class UserProfileController extends Controller
                 ->get()
                 ->map(function ($user) {
                     $userArray = $user->toArray();
-
                     $userArray['location_id'] = ! empty($userArray['location_users'])
                     ? $userArray['location_users']['location_id']
                     : null;
-
                     unset($userArray['location_users']);
                     return $userArray;
                 });
@@ -82,6 +80,7 @@ class UserProfileController extends Controller
             ]);
         }
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -383,6 +382,27 @@ class UserProfileController extends Controller
 
         return response()->json(['message' => "{$roleName} deleted successfully"]);
     }
+
+    // get deleted user
+   public function deletedUsers()
+{
+    $deletedUsers = UserProfileModel::with('locationUsers')
+        ->where('deletestatus', 1)
+        ->get()
+        ->map(function ($user) {
+            $userArray = $user->toArray();
+            $userArray['location_id'] = !empty($userArray['location_users'])
+                ? $userArray['location_users']['location_id']
+                : null;
+            unset($userArray['location_users']);
+            return $userArray;
+        });
+
+    return response()->json([
+        'message' => 'Deleted users list',
+        'data'    => $deletedUsers,
+    ]);
+}
 
     public function getnotifications(Request $request)
     {

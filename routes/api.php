@@ -61,6 +61,7 @@ Route::middleware('apiauth')->group(function () {
 
     Route::prefix('/users')->group(function () {
         Route::get('/manager/{id?}', [UserProfileController::class, 'forManagers']);
+        Route::get('/deleted', [UserProfileController::class, 'deletedUsers']); // Move this ABOVE /{id?}
         Route::get('/{id?}', [UserProfileController::class, 'index']);
         Route::post('/', [UserProfileController::class, 'store'])->name('users.store');
         Route::post('{id}', [UserProfileController::class, 'update']);
