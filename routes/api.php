@@ -64,6 +64,7 @@ Route::middleware('apiauth')->group(function () {
         Route::get('/deleted', [UserProfileController::class, 'deletedUsers']); // Move this ABOVE /{id?}
         Route::get('/{id?}', [UserProfileController::class, 'index']);
         Route::post('/', [UserProfileController::class, 'store'])->name('users.store');
+        Route::post('/restore/{id}', [UserProfileController::class, 'restore']);
         Route::post('{id}', [UserProfileController::class, 'update']);
         Route::delete('{id}', [UserProfileController::class, 'destroy']);
         Route::get('/role/{id}', [UserProfileController::class, 'show'])->name('users.show');

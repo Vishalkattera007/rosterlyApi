@@ -404,6 +404,34 @@ class UserProfileController extends Controller
     ]);
 }
 
+// Restore User
+
+public function restore($id)
+{
+    try {
+        $user = UserProfileModel::findOrFail($id);
+
+        $user->status = 1;
+        $user->deletestatus = 0;
+        $user->deletedBy = auth()->id(); // optional
+        $user->deleted_at = Carbon::now();
+
+        $user->save();
+
+        return response()->json([
+            'message' => 'User restored successfully.',
+            'data' => $user
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Failed to restore user',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
+
     public function getnotifications(Request $request)
     {
         $user = $request->user('api'); // Authenticated user
