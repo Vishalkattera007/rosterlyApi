@@ -406,14 +406,15 @@ class UserProfileController extends Controller
 
 // Restore User
 
-public function restore($id)
+public function restore($id, Request $request)
 {
     try {
+        $loginId = $request->user('api')->id;
         $user = UserProfileModel::findOrFail($id);
 
         $user->status = 1;
         $user->deletestatus = 0;
-        $user->deletedBy = auth()->id(); // optional
+        $user->deletedBy = $loginId; // optional
         $user->deleted_at = Carbon::now();
 
         $user->save();
